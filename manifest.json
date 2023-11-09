@@ -1,0 +1,11 @@
+{
+  "name": "Playlist Labels",
+  "description": "Adds interactive playlist labels to your tracklist",
+  "preview": "preview.png",
+  "main": "dist/spicetify-playlist-labels.js",
+  "readme": "README.md",
+  "authors": [
+      { "name": "Scott Duffey", "url": "https://github.com/duffey" }
+  ],
+  "tags": ["playlist", "label", "tag", "tracklist"]
+}
