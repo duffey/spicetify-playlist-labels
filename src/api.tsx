@@ -13,7 +13,9 @@ export async function getPlaylistColor(uri) {
         fetchExtractedColorForPlaylistEntity,
         { uri: uri },
     );
-    return data.data.playlistV2.images.items[0].extractedColors.colorDark.hex;
+    const items = data.data.playlistV2.images.items;
+    if (items.length === 0) return null;
+    return items[0].extractedColors?.colorDark.hex;
 }
 
 export async function removeTrackFromPlaylist(playlistUri, trackUri) {

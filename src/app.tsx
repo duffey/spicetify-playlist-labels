@@ -109,9 +109,9 @@ function updateTracklist() {
                                 const playlistId = playlistUriToPlaylistId(playlistData.uri);
                                 if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return null;
                                 return (
-                                    <Chip className="encore-dark-theme spicetify-playlist-labels-label" style={{
+                                    <Chip className="encore-dark-theme spicetify-playlist-labels-label" style={playlistData.color ? {
                                         backgroundColor: playlistData.color,
-                                    }}
+                                    } : {}}
                                                  isUsingKeyboard={false} onClick={(e: Event) => {
                                         e.stopPropagation()
                                         const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
