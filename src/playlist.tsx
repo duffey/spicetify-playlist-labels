@@ -16,19 +16,22 @@ export async function getTrackUriToPlaylistData() {
         if (color)
             cachedPlaylistColors[playlists[index].uri] = color;
     });
-    const trackUritoPlaylistData = {};
+    const trackUriToPlaylistData = {};
     playlistItems.forEach((playlistItems, index) => {
         playlistItems.forEach((playlistItem) => {
-            if (!trackUritoPlaylistData[playlistItem.link]) {
-                trackUritoPlaylistData[playlistItem.link] = [];
+            const trackUri = playlistItem.link;
+            if (!trackUriToPlaylistData[trackUri]) {
+                trackUriToPlaylistData[trackUri] = [];
             }
-            trackUritoPlaylistData[playlistItem.link].push({
-                name: playlists[index].name,
-                uri: playlists[index].uri,
-                color: playlistColors[index],
-                canEdit: playlists[index].canAdd && playlists[index].canRemove
-            });
+            if (!trackUriToPlaylistData[trackUri].some(obj => obj.uri === playlists[index].uri)) {
+                trackUriToPlaylistData[trackUri].push({
+                    name: playlists[index].name,
+                    uri: playlists[index].uri,
+                    color: playlistColors[index],
+                    canEdit: playlists[index].canAdd && playlists[index].canRemove
+                });
+            }
         });
     });
-    return trackUritoPlaylistData;
+    return trackUriToPlaylistData;
 }

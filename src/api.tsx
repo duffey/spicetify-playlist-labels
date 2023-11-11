@@ -19,16 +19,5 @@ export async function getPlaylistColor(uri) {
 }
 
 export async function removeTrackFromPlaylist(playlistUri, trackUri) {
-    const playlistUriToPlaylistId = (uri) => {
-        return uri.match(/spotify:playlist:(.*)/)[1];
-    }
-
-    const playlistId = playlistUriToPlaylistId(playlistUri);
-    await Spicetify.CosmosAsync.del(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-        tracks: [
-            {
-                uri: trackUri,
-            },
-        ],
-    });
+    await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [{ uri: trackUri, uid: "" }]);
 }
