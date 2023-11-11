@@ -119,9 +119,9 @@ function updateTracklist() {
                                             pathname: path,
                                             search: `?highlight=${trackUri}`
                                         });
-                                    }} size={true} iconTrailing={() => (
+                                    }} size={true} iconTrailing={playlistData.canEdit ? () => (
                                         <RemoveIcon trackUri={trackUri} playlistData={playlistData}/>
-                                    )}>{playlistData.name}</Chip>
+                                    ) : null}>{playlistData.name}</Chip>
                                 );
                             })
                         }

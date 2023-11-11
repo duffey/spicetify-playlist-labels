@@ -2,19 +2,20 @@ import {getContents, getPlaylistItems, getPlaylistColor} from "./api";
 
 export async function getTrackUriToPlaylistData() {
     const contents = await getContents();
-    const ownPlaylists = contents.items.filter((item) => item.isOwnedBySelf);
-    const ownPlaylistItems = await Promise.all(ownPlaylists.map((playlist) => getPlaylistItems(playlist.uri)));
-    const ownPlaylistColors = await Promise.all(ownPlaylists.map((playlist) => getPlaylistColor(playlist.uri)));
+    const playlists = contents.items.filter((item) => item.type === 'playlist');
+    const playlistItems = await Promise.all(playlists.map((playlist) => getPlaylistItems(playlist.uri)));
+    const playlistColors = await Promise.all(playlists.map((playlist) => getPlaylistColor(playlist.uri)));
     const trackUritoPlaylistData = {};
-    ownPlaylistItems.forEach((playlistItems, index) => {
+    playlistItems.forEach((playlistItems, index) => {
         playlistItems.forEach((playlistItem) => {
             if (!trackUritoPlaylistData[playlistItem.link]) {
                 trackUritoPlaylistData[playlistItem.link] = [];
             }
             trackUritoPlaylistData[playlistItem.link].push({
-                name: ownPlaylists[index].name,
-                uri: ownPlaylists[index].uri,
-                color: ownPlaylistColors[index]
+                name: playlists[index].name,
+                uri: playlists[index].uri,
+                color: playlistColors[index],
+                canEdit: playlists[index].canAdd && playlists[index].canRemove
             });
         });
     });
