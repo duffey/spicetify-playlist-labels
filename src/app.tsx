@@ -88,9 +88,14 @@ function updateTracklist() {
                 const RemoveIcon = Spicetify.React.memo((props: { trackUri, playlistData }) =>
                     <Spicetify.ReactComponent.IconComponent semanticColor='textSubdued'
                                                             dangerouslySetInnerHTML={{__html: iconData}}
-                                                            iconSize={12}
+                                                            height="100%"
+                                                            width="100%"
                                                             viewBox='0 0 24 24'
                                                             className="custom-svg"
+                                                            style={{
+                                                                position: "relative",
+                                                                left: "2px"
+                                                            }}
                                                             onClick={(e: Event) => {
                                                                 e.stopPropagation();
                                                                 removeTrackFromPlaylist(props.playlistData.uri, props.trackUri)
@@ -166,16 +171,16 @@ async function main() {
     }
 
     // Force all webpack modules to load
-	const require = webpackChunkopen.push([[Symbol()], {}, re => re]);
-	const cache = Object.keys(require.m).map(id => require(id));
-	const modules = cache
-		.filter(module => typeof module === "object")
-		.map(module => {
-			try {
-				return Object.values(module);
-			} catch {}
-		})
-		.flat();
+    const require = webpackChunkopen.push([[Symbol()], {}, re => re]);
+    const cache = Object.keys(require.m).map(id => require(id));
+    const modules = cache
+        .filter(module => typeof module === "object")
+        .map(module => {
+            try {
+                return Object.values(module);
+            } catch {}
+        })
+        .flat();
     Chip = modules.find(m => m?.render?.toString().includes("invertedDark")),
 
     await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {

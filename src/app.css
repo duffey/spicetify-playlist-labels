@@ -1,7 +1,8 @@
 .spicetify-playlist-labels-label {
     font-size: 12px !important;
-    padding: 3px 4px 3px 4px !important;
+    padding: 3px 6px 3px 6px !important;
     white-space: nowrap;
+    height: 18px;
 }
 
 .custom-svg {
@@ -11,10 +12,14 @@
     transition: fill 0.1s;
 }
 
+.custom-svg:hover {
+    fill: var(--text-negative) !important;
+}
+
 .ChipComponent-checkbox-chip-size {
     margin-bottom: 0 !important;
 }
 
 .ChipInnerComponent-iconTrailing-size-isUsingKeyboard {
-    grid-gap: 10px !important;
+    grid-gap: 6px !important;
 }
