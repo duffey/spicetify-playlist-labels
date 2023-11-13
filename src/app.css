@@ -2,7 +2,17 @@
     font-size: 12px !important;
     padding: 3px 6px 3px 6px !important;
     white-space: nowrap;
-    height: 18px;
+}
+
+.spicetify-playlist-labels-container {
+    height: var(--row-height);
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    overflow: hidden;
+    gap: calc((var(--row-height) - 36px) / 3.0);
+    padding-top: calc((var(--row-height) - 36px) / 3.0);
+    padding-bottom: calc((var(--row-height) - 36px) / 3.0);
 }
 
 .custom-svg {

@@ -19,7 +19,7 @@ export async function getTrackUriToPlaylistData() {
     const trackUriToPlaylistData = {};
     playlistItems.forEach((playlistItems, index) => {
         playlistItems.forEach((playlistItem) => {
-            const trackUri = playlistItem.link;
+            const trackUri = playlistItem.uri;
             if (!trackUriToPlaylistData[trackUri]) {
                 trackUriToPlaylistData[trackUri] = [];
             }
@@ -27,6 +27,7 @@ export async function getTrackUriToPlaylistData() {
                 trackUriToPlaylistData[trackUri].push({
                     name: playlists[index].name,
                     uri: playlists[index].uri,
+                    trackUid: playlistItem.uid,
                     color: playlistColors[index],
                     canEdit: playlists[index].canAdd && playlists[index].canRemove
                 });

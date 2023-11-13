@@ -14,6 +14,8 @@ let oldTracklists = [];
 let trackUriToPlaylistData = {};
 let playlistUpdated = false;
 let Chip = null;
+let highlightTrack = null;
+let highlightTrackPath = null;
 
 function playlistUriToPlaylistId(uri) {
     return uri.match(/spotify:playlist:(.*)/)[1];
@@ -69,6 +71,10 @@ function updateTracklist() {
         const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
         for (const track of tracks) {
             const trackUri = getTracklistTrackUri(track);
+            if (highlightTrack === trackUri && Spicetify.Platform.History.location.pathname === highlightTrackPath) {
+                track.click();
+                highlightTrack = null;
+            }
 
             let labelColumn = track.querySelector(".spicetify-playlist-labels");
             if (playlistUpdated) {
@@ -88,14 +94,10 @@ function updateTracklist() {
                 const RemoveIcon = Spicetify.React.memo((props: { trackUri, playlistData }) =>
                     <Spicetify.ReactComponent.IconComponent semanticColor='textSubdued'
                                                             dangerouslySetInnerHTML={{__html: iconData}}
-                                                            height="100%"
-                                                            width="100%"
+                                                            width="1em"
+                                                            height="1em"
                                                             viewBox='0 0 24 24'
                                                             className="custom-svg"
-                                                            style={{
-                                                                position: "relative",
-                                                                left: "2px"
-                                                            }}
                                                             onClick={(e: Event) => {
                                                                 e.stopPropagation();
                                                                 removeTrackFromPlaylist(props.playlistData.uri, props.trackUri)
@@ -106,9 +108,7 @@ function updateTracklist() {
                     />
                 );
                 ReactDOM.render(
-                    <div style={{
-                        lineHeight: '20px',
-                    }}>
+                    <div className="spicetify-playlist-labels-container">
                         {
                             trackUriToPlaylistData[trackUri]?.map((playlistData) => {
                                 const playlistId = playlistUriToPlaylistId(playlistData.uri);
@@ -116,17 +116,21 @@ function updateTracklist() {
                                 return (
                                     <Chip className="encore-dark-theme spicetify-playlist-labels-label" style={playlistData.color ? {
                                         backgroundColor: playlistData.color,
+                                        margin: 0
                                     } : {}}
                                                  isUsingKeyboard={false} onClick={(e: Event) => {
                                         e.stopPropagation()
                                         const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
+                                        highlightTrack = trackUri;
+                                        highlightTrackPath = path;
                                         if (path) Spicetify.Platform.History.push({
                                             pathname: path,
-                                            search: `?highlight=${trackUri}`
+                                            search: `?uid=${playlistData.trackUid}`
                                         });
                                     }} size={true} iconTrailing={playlistData.canEdit ? () => (
                                         <RemoveIcon trackUri={trackUri} playlistData={playlistData}/>
                                     ) : null}>{playlistData.name}</Chip>
+
                                 );
                             })
                         }

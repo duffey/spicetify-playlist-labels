@@ -3,7 +3,7 @@ export async function getContents() {
 }
 
 export async function getPlaylistItems(uri) {
-    const result = await Spicetify.CosmosAsync.get(`sp://core-playlist/v1/playlist/${uri}`);
+    const result = await Spicetify.Platform.PlaylistAPI.getContents(uri)
     return result.items;
 }
 
