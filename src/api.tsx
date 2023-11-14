@@ -7,15 +7,13 @@ export async function getPlaylistItems(uri) {
     return result.items;
 }
 
-export async function getPlaylistColor(uri) {
-    const { fetchExtractedColorForPlaylistEntity } = Spicetify.GraphQL.Definitions;
+export async function getPlaylistColor(imageUri) {
+    const { fetchExtractedColors } = Spicetify.GraphQL.Definitions;
     const data = await Spicetify.GraphQL.Request(
-        fetchExtractedColorForPlaylistEntity,
-        { uri: uri },
+        fetchExtractedColors,
+        { uris: [imageUri] },
     );
-    const items = data.data.playlistV2.images.items;
-    if (items.length === 0) return null;
-    return items[0].extractedColors?.colorDark.hex;
+    return data.data?.extractedColors?.[0]?.colorRaw?.hex;
 }
 
 export async function removeTrackFromPlaylist(playlistUri, trackUri) {

@@ -7,10 +7,13 @@ export async function getTrackUriToPlaylistData() {
     const playlists = contents.items.filter((item) => item.type === 'playlist');
     const playlistItems = await Promise.all(playlists.map((playlist) => getPlaylistItems(playlist.uri)));
     const playlistColors = await Promise.all(playlists.map((playlist) => {
-        if (cachedPlaylistColors[playlist.uri]) {
-            return cachedPlaylistColors[playlist.uri];
+        const images = playlist.images;
+        if (images.length === 0) return null;
+        const imageUri = images[0].url;
+        if (cachedPlaylistColors[imageUri]) {
+            return cachedPlaylistColors[imageUri];
         }
-        return getPlaylistColor(playlist.uri);
+        return getPlaylistColor(imageUri);
     }));
     playlistColors.forEach((color, index) => {
         if (color)
