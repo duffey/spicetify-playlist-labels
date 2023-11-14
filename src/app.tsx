@@ -144,7 +144,7 @@ function updateTracklist() {
                                                 />
                                             </button>
                                         ) : () => (<snan style={{ width: '6px' }}></snan>)}>
-                                        <span style={{ padding: '0 0px 0 6px' }}>{playlistData.name}</span>
+                                        <span style={{ padding: '0 2px 0 6px' }}>{playlistData.name}</span>
                                     </Chip>
 
                                 );
