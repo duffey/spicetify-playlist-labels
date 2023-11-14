@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './app.css'
-import {getTrackUriToPlaylistData} from "./playlist";
-import {removeTrackFromPlaylist} from "./api";
+import { getTrackUriToPlaylistData } from "./playlist";
+import { removeTrackFromPlaylist } from "./api";
 
 let originalTracklistHeaderCss = null;
 let originalTracklistTrackCss = null;
@@ -91,20 +91,12 @@ function updateTracklist() {
                 labelColumn = document.createElement("div");
 
                 const iconData = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm4.151 17.943l-4.143-4.102-4.117 4.159-1.833-1.833 4.104-4.157-4.162-4.119 1.833-1.833 4.155 4.102 4.106-4.16 1.849 1.849-4.1 4.141 4.157 4.104-1.849 1.849z" /></svg>'
-                const RemoveIcon = Spicetify.React.memo((props: { trackUri, playlistData }) =>
+                const RemoveIcon = Spicetify.React.memo(() =>
                     <Spicetify.ReactComponent.IconComponent semanticColor='textBase'
-                                                            dangerouslySetInnerHTML={{__html: iconData}}
-                                                            width="1em"
-                                                            height="1em"
-                                                            viewBox='0 0 24 24'
-                                                            className="custom-svg"
-                                                            onClick={(e: Event) => {
-                                                                e.stopPropagation();
-                                                                removeTrackFromPlaylist(props.playlistData.uri, props.trackUri)
-                                                                trackUriToPlaylistData[props.trackUri] = trackUriToPlaylistData[props.trackUri].filter((playlistData) => playlistData.name !== props.playlistData.name);
-                                                                playlistUpdated = true;
-                                                                updateTracklist();
-                                                            }}
+                        dangerouslySetInnerHTML={{ __html: iconData }}
+                        width="10px"
+                        height="10px"
+                        viewBox='0 0 24 24'
                     />
                 );
 
@@ -129,18 +121,31 @@ function updateTracklist() {
                                 if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return null;
                                 return (
                                     <Chip className="encore-dark-theme spicetify-playlist-labels-label" style={chipStyle(playlistData)}
-                                                 isUsingKeyboard={false} onClick={(e: Event) => {
-                                        e.stopPropagation()
-                                        const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
-                                        highlightTrack = trackUri;
-                                        highlightTrackPath = path;
-                                        if (path) Spicetify.Platform.History.push({
-                                            pathname: path,
-                                            search: `?uid=${playlistData.trackUid}`
-                                        });
-                                    }} size={true} iconTrailing={playlistData.canEdit ? () => (
-                                        <RemoveIcon trackUri={trackUri} playlistData={playlistData}/>
-                                    ) : null}>{playlistData.name}</Chip>
+                                        isUsingKeyboard={false} onClick={(e: Event) => {
+                                            e.stopPropagation()
+                                            const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
+                                            highlightTrack = trackUri;
+                                            highlightTrackPath = path;
+                                            if (path) Spicetify.Platform.History.push({
+                                                pathname: path,
+                                                search: `?uid=${playlistData.trackUid}`
+                                            });
+                                        }} size={true} iconTrailing={playlistData.canEdit ? () => (
+                                            <button className="spicetify-playlist-labels-remove-button"
+                                                onClick={(e: Event) => {
+                                                    e.stopPropagation();
+                                                    removeTrackFromPlaylist(playlistData.uri, trackUri)
+                                                    trackUriToPlaylistData[trackUri] = trackUriToPlaylistData[trackUri].filter((otherPlaylistData) => otherPlaylistData.name !== playlistData.name);
+                                                    playlistUpdated = true;
+                                                    updateTracklist();
+                                                }}>
+                                                <RemoveIcon trackUri={trackUri}
+                                                    playlistData={playlistData}
+                                                />
+                                            </button>
+                                        ) : () => (<snan style={{ width: '6px' }}></snan>)}>
+                                        <span style={{ padding: '0 0px 0 6px' }}>{playlistData.name}</span>
+                                    </Chip>
 
                                 );
                             })
@@ -193,18 +198,18 @@ async function main() {
         .map(module => {
             try {
                 return Object.values(module);
-            } catch {}
+            } catch { }
         })
         .flat();
     Chip = modules.find(m => m?.render?.toString().includes("invertedDark")),
 
-    await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {
-        getTrackUriToPlaylistData().then((data) => {
-            trackUriToPlaylistData = data;
-            playlistUpdated = true;
-            updateTracklist();
+        await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {
+            getTrackUriToPlaylistData().then((data) => {
+                trackUriToPlaylistData = data;
+                playlistUpdated = true;
+                updateTracklist();
+            });
         });
-    });
 
     trackUriToPlaylistData = await getTrackUriToPlaylistData();
 

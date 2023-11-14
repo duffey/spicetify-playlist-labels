@@ -1,8 +1,9 @@
 .spicetify-playlist-labels-label {
     font-size: 12px !important;
-    padding: 3px 6px 3px 6px !important;
+    padding: 0 !important;
     white-space: nowrap;
     color: var(--spice-text) !important;
+    height: 18px;
 }
 
 .spicetify-playlist-labels-container {
@@ -16,12 +17,18 @@
     padding-bottom: calc((var(--row-height) - 36px) / 3.0);
 }
 
-.custom-svg {
-    transition: fill 0.1s;
+.spicetify-playlist-labels-remove-button {
+    display: inline-flex;
+    background: transparent;
+    height: 18px;
+    width: 18px;
+    padding: 4px;
+    border-radius: calc(infinity * 1px);
+    border: 0;
 }
 
-.custom-svg:hover {
-    fill: var(--text-negative) !important;
+.spicetify-playlist-labels-remove-button:hover {
+    background: rgb(0, 0, 0, 0.2);
 }
 
 .ChipComponent-checkbox-chip-size {
@@ -29,5 +36,5 @@
 }
 
 .ChipInnerComponent-iconTrailing-size-isUsingKeyboard {
-    grid-gap: 6px !important;
+    grid-gap: 0px !important;
 }
