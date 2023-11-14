@@ -92,7 +92,7 @@ function updateTracklist() {
 
                 const iconData = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm4.151 17.943l-4.143-4.102-4.117 4.159-1.833-1.833 4.104-4.157-4.162-4.119 1.833-1.833 4.155 4.102 4.106-4.16 1.849 1.849-4.1 4.141 4.157 4.104-1.849 1.849z" /></svg>'
                 const RemoveIcon = Spicetify.React.memo((props: { trackUri, playlistData }) =>
-                    <Spicetify.ReactComponent.IconComponent semanticColor='textSubdued'
+                    <Spicetify.ReactComponent.IconComponent semanticColor='textBase'
                                                             dangerouslySetInnerHTML={{__html: iconData}}
                                                             width="1em"
                                                             height="1em"
@@ -107,6 +107,20 @@ function updateTracklist() {
                                                             }}
                     />
                 );
+
+                const chipStyle = (playlistData) => {
+                    if (Spicetify.Config.color_scheme !== '' || !playlistData.color) {
+                        return {
+                            margin: 0,
+                            backgroundColor: 'var(--background-tinted-base)'
+                        };
+                    }
+                    return {
+                        margin: 0,
+                        backgroundColor: playlistData.color
+                    };
+                };
+
                 ReactDOM.render(
                     <div className="spicetify-playlist-labels-container">
                         {
@@ -114,10 +128,7 @@ function updateTracklist() {
                                 const playlistId = playlistUriToPlaylistId(playlistData.uri);
                                 if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return null;
                                 return (
-                                    <Chip className="encore-dark-theme spicetify-playlist-labels-label" style={playlistData.color ? {
-                                        backgroundColor: playlistData.color,
-                                        margin: 0
-                                    } : {}}
+                                    <Chip className="encore-dark-theme spicetify-playlist-labels-label" style={chipStyle(playlistData)}
                                                  isUsingKeyboard={false} onClick={(e: Event) => {
                                         e.stopPropagation()
                                         const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);

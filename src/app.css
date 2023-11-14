@@ -2,6 +2,7 @@
     font-size: 12px !important;
     padding: 3px 6px 3px 6px !important;
     white-space: nowrap;
+    color: var(--spice-text) !important;
 }
 
 .spicetify-playlist-labels-container {
@@ -16,9 +17,6 @@
 }
 
 .custom-svg {
-    &:hover {
-        fill: var(--text-negative);
-    }
     transition: fill 0.1s;
 }
 
