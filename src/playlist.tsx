@@ -2,9 +2,25 @@ import {getContents, getPlaylistItems, getPlaylistColor} from "./api";
 
 const cachedPlaylistColors = {};
 
+function getAllPlaylists(contents) {
+    let playlists = [];
+
+    function traverse(folder) {
+        if (folder.type === 'playlist') {
+            playlists.push(folder);
+        } else if (folder.type === 'folder' && folder.items) {
+            folder.items.forEach(item => traverse(item));
+        }
+    }
+
+    traverse(contents);
+
+    return playlists;
+}
+
 export async function getTrackUriToPlaylistData() {
     const contents = await getContents();
-    const playlists = contents.items.filter((item) => item.type === 'playlist');
+    const playlists = getAllPlaylists(contents);
     const playlistItems = await Promise.all(playlists.map((playlist) => getPlaylistItems(playlist.uri)));
     const playlistColors = await Promise.all(playlists.map((playlist) => {
         const images = playlist.images;
