@@ -119,6 +119,7 @@ function updateTracklist() {
                             trackUriToPlaylistData[trackUri]?.map((playlistData) => {
                                 const playlistId = playlistUriToPlaylistId(playlistData.uri);
                                 if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return null;
+                                const playlistName = playlistData.name.match(/^\p{Extended_Pictographic}/u)?.[0] ?? playlistData.name
                                 return (
                                     <Chip className="encore-dark-theme spicetify-playlist-labels-label" style={chipStyle(playlistData)}
                                         isUsingKeyboard={false} onClick={(e: Event) => {
@@ -144,7 +145,7 @@ function updateTracklist() {
                                                 />
                                             </button>
                                         ) : () => (<snan style={{ width: '4px' }}></snan>)}>
-                                        <span style={{ padding: '0 2px 0 6px' }}>{playlistData.name}</span>
+                                        <span style={{ padding: '0 2px 0 6px' }}>{playlistName}</span>
                                     </Chip>
 
                                 );
