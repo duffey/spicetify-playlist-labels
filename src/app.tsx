@@ -147,7 +147,13 @@ function updateTracklist() {
                                                 />
                                             </button>
                                         ) : () => (<snan style={{ width: '4px' }}></snan>)}>
-                                        <span style={{ padding: '0 2px 0 6px' }}>{playlistData.name}</span>
+                                        <div style={{
+                                            padding: '0 2px 0 6px',
+                                            maxWidth: '60px',
+                                            textOverflow: 'ellipsis',
+                                            overflow: 'hidden',
+                                            whiteSpace: 'nowrap',
+                                            }}>{playlistData.name}</div>
                                     </Spicetify.ReactComponent.Chip>
 
                                 );
@@ -192,6 +198,14 @@ async function main() {
     while (!Spicetify?.showNotification) {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
+
+    await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {
+        getTrackUriToPlaylistData().then((data) => {
+            trackUriToPlaylistData = data;
+            playlistUpdated = true;
+            updateTracklist();
+        });
+    });
 
     const extraControls = document.querySelector(".main-nowPlayingBar-extraControls");
     const showAllPlaylistsButtonContainer = document.createElement("span");
