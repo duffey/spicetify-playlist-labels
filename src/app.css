@@ -1,40 +1,41 @@
-.spicetify-playlist-labels-label {
-    font-size: 12px !important;
-    padding: 0 !important;
-    white-space: nowrap;
-    color: var(--spice-text) !important;
-    height: 18px;
-}
-
-.spicetify-playlist-labels-container {
+.spicetify-playlist-labels-labels-container {
     height: var(--row-height);
     align-items: center;
     display: flex;
     flex-wrap: wrap;
     overflow: hidden;
-    gap: calc((var(--row-height) - 36px) / 3.0);
-    padding-top: calc((var(--row-height) - 36px) / 3.0);
-    padding-bottom: calc((var(--row-height) - 36px) / 3.0);
+    gap: 7px;
 }
 
-.spicetify-playlist-labels-remove-button {
-    display: inline-flex;
-    background: transparent;
-    height: 18px;
-    width: 18px;
-    padding: 4px;
-    border-radius: calc(infinity * 1px);
+.spicetify-playlist-labels-label-container {
+    position: relative;
+    height: 40px;
+}
+
+.spicetify-playlist-labels-label-container button {
+    visibility: hidden;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 14px;
+    height: 14px;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
     border: 0;
+    border-top-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    vertical-align: top;
 }
 
-.spicetify-playlist-labels-remove-button:hover {
-    background: rgb(0, 0, 0, 0.2);
+.spicetify-playlist-labels-label-container:hover button {
+    visibility: visible;
 }
 
-.ChipComponent-checkbox-chip-size {
-    margin-bottom: 0 !important;
+.spicetify-playlist-labels-label-container button:hover {
+    background-color: var(--text-negative);
 }
 
-.ChipInnerComponent-iconTrailing-size-isUsingKeyboard {
-    grid-gap: 0px !important;
+.spicetify-playlist-labels-label-container button svg {
+    padding: 1px;
+    vertical-align: top;
 }

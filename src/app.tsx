@@ -90,31 +90,18 @@ function updateTracklist() {
                 lastColumn.setAttribute("aria-colindex", (colIndexInt + 1).toString());
                 labelColumn = document.createElement("div");
 
-                const iconData = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm4.151 17.943l-4.143-4.102-4.117 4.159-1.833-1.833 4.104-4.157-4.162-4.119 1.833-1.833 4.155 4.102 4.106-4.16 1.849 1.849-4.1 4.141 4.157 4.104-1.849 1.849z" /></svg>'
+                const iconData = '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>';
                 const RemoveIcon = Spicetify.React.memo(() =>
                     <Spicetify.ReactComponent.IconComponent semanticColor='textBase'
                         dangerouslySetInnerHTML={{ __html: iconData }}
-                        width="10px"
-                        height="10px"
-                        viewBox='0 0 24 24'
+                        width="14px"
+                        height="14px"
+                        viewBox='0 0 14 14'
                     />
                 );
 
-                const chipStyle = (playlistData) => {
-                    if (Spicetify.Config.color_scheme !== '' || !playlistData.color) {
-                        return {
-                            margin: 0,
-                            backgroundColor: 'var(--background-tinted-base)'
-                        };
-                    }
-                    return {
-                        margin: 0,
-                        backgroundColor: playlistData.color
-                    };
-                };
-
                 ReactDOM.render(
-                    <div className="spicetify-playlist-labels-container">
+                    <div className="spicetify-playlist-labels-labels-container">
                         {
                             trackUriToPlaylistData[trackUri]?.map((playlistData) => {
                                 if (!showAllPlaylists && !playlistData.canEdit) return null;
@@ -123,39 +110,39 @@ function updateTracklist() {
                                 if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return null;
 
                                 return (
-                                    <Spicetify.ReactComponent.Chip className="encore-dark-theme spicetify-playlist-labels-label" style={chipStyle(playlistData)}
-                                        isUsingKeyboard={false} onClick={(e: Event) => {
-                                            e.stopPropagation()
-                                            const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
-                                            highlightTrack = trackUri;
-                                            highlightTrackPath = path;
-                                            if (path) Spicetify.Platform.History.push({
-                                                pathname: path,
-                                                search: `?uid=${playlistData.trackUid}`
-                                            });
-                                        }} size={true} iconTrailing={playlistData.canEdit ? () => (
-                                            <button className="spicetify-playlist-labels-remove-button"
-                                                onClick={(e: Event) => {
-                                                    e.stopPropagation();
-                                                    removeTrackFromPlaylist(playlistData.uri, trackUri)
-                                                    trackUriToPlaylistData[trackUri] = trackUriToPlaylistData[trackUri].filter((otherPlaylistData) => otherPlaylistData.name !== playlistData.name);
-                                                    playlistUpdated = true;
-                                                    updateTracklist();
-                                                }}>
-                                                <RemoveIcon trackUri={trackUri}
-                                                    playlistData={playlistData}
-                                                />
-                                            </button>
-                                        ) : () => (<snan style={{ width: '4px' }}></snan>)}>
-                                        <div style={{
-                                            padding: '0 2px 0 6px',
-                                            maxWidth: '60px',
-                                            textOverflow: 'ellipsis',
-                                            overflow: 'hidden',
-                                            whiteSpace: 'nowrap',
-                                            }}>{playlistData.name}</div>
-                                    </Spicetify.ReactComponent.Chip>
-
+                                    <Spicetify.ReactComponent.TooltipWrapper
+                                        label={playlistData.name}
+                                        placement="top"
+                                    >
+                                        <div className="spicetify-playlist-labels-label-container">
+                                            <input type="image" width="40px" style={{ borderRadius: '4px'}} src={playlistData.image} onClick={(e: Event) => {
+                                                    e.stopPropagation()
+                                                    const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
+                                                    highlightTrack = trackUri;
+                                                    highlightTrackPath = path;
+                                                    if (path) Spicetify.Platform.History.push({
+                                                        pathname: path,
+                                                        search: `?uid=${playlistData.trackUid}`
+                                                    });
+                                            }}/>
+                                            { playlistData.canEdit ?
+                                                <Spicetify.ReactComponent.TooltipWrapper
+                                                    label={`Remove from ${playlistData.name}`}
+                                                    placement="top"
+                                                >
+                                                    <button onClick={(e: Event) => {
+                                                        e.stopPropagation();
+                                                        removeTrackFromPlaylist(playlistData.uri, trackUri)
+                                                        trackUriToPlaylistData[trackUri] = trackUriToPlaylistData[trackUri].filter((otherPlaylistData) => otherPlaylistData.name !== playlistData.name);
+                                                        playlistUpdated = true;
+                                                        updateTracklist();
+                                                    }}>
+                                                        <RemoveIcon/>
+                                                    </button>
+                                                </Spicetify.ReactComponent.TooltipWrapper>
+                                            : null}
+                                        </div>
+                                    </Spicetify.ReactComponent.TooltipWrapper>
                                 );
                             })
                         }
@@ -209,7 +196,6 @@ async function main() {
 
     const extraControls = document.querySelector(".main-nowPlayingBar-extraControls");
     const showAllPlaylistsButtonContainer = document.createElement("span");
-    const showAllPlaylistsIconSvg = '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M345 39.1L472.8 168.4c52.4 53 52.4 138.2 0 191.2L360.8 472.9c-9.3 9.4-24.5 9.5-33.9 .2s-9.5-24.5-.2-33.9L438.6 325.9c33.9-34.3 33.9-89.4 0-123.7L310.9 72.9c-9.3-9.4-9.2-24.6 .2-33.9s24.6-9.2 33.9 .2zM0 229.5V80C0 53.5 21.5 32 48 32H197.5c17 0 33.3 6.7 45.3 18.7l168 168c25 25 25 65.5 0 90.5L277.3 442.7c-25 25-65.5 25-90.5 0l-168-168C6.7 262.7 0 246.5 0 229.5zM144 144a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"/></svg>';
     const ShowAllPlaylistsButton = React.memo(() => {
         const [isClicked, setIsClicked] = useState(false);
         const initialClasses = 'Button-sc-1dqy6lx-0 Button-small-small-buttonTertiary-iconOnly-isUsingKeyboard-useBrowserDefaultFocusStyle main-genericButton-button';
@@ -225,12 +211,12 @@ async function main() {
 
         return (
             <Spicetify.ReactComponent.TooltipWrapper
-                label="Show All Playlist Labels"
+                label={ isClicked ? "Show Editable Playlist Labels" : "Show All Playlist Labels" }
                 placement="top"
             >
                 <button className={classes} onClick={handleClick}>
                     <Spicetify.ReactComponent.IconComponent
-                        dangerouslySetInnerHTML={{ __html: showAllPlaylistsIconSvg }}
+                        dangerouslySetInnerHTML={{ __html: Spicetify.SVGIcons["spotify"] }}
                         iconSize={16}
                     />
                 </button>
