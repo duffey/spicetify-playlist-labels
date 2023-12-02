@@ -115,7 +115,10 @@ function updateTracklist() {
                                         placement="top"
                                     >
                                         <div className="spicetify-playlist-labels-label-container">
-                                            <input type="image" width="40px" style={{ borderRadius: '4px'}} src={playlistData.image} onClick={(e: Event) => {
+                                            <img width="40px" style={{
+                                                borderRadius: '4px',
+                                                cursor: 'pointer'
+                                            }} src={playlistData.image} onClick={(e: Event) => {
                                                     e.stopPropagation()
                                                     const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
                                                     highlightTrack = trackUri;

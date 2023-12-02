@@ -38,4 +38,5 @@
 .spicetify-playlist-labels-label-container button svg {
     padding: 1px;
     vertical-align: top;
+    fill: white;
 }
