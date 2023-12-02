@@ -33,7 +33,7 @@ export async function getTrackUriToPlaylistData() {
                     uri: playlists[index].uri,
                     trackUid: playlistItem.uid,
                     canEdit: playlists[index].canAdd && playlists[index].canRemove,
-                    image: playlists[index].images[0].url
+                    image: playlists[index].images[0]?.url || ''
                 });
             }
         });
