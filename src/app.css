@@ -40,3 +40,8 @@
     vertical-align: top;
     fill: white;
 }
+
+.spicetify-playlist-labels-label-container > img {
+    height: 100%;
+    object-fit: cover;
+}
