@@ -189,7 +189,7 @@ async function main() {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    showAllPlaylists = await JSON.parse(localStorage.getItem('playlist-labels:show-all') || 'false');
+    showAllPlaylists = await JSON.parse(localStorage.getItem('spicetify-playlist-labels:show-all') || 'false');
 
     await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {
         getTrackUriToPlaylistData().then((data) => {
@@ -201,7 +201,7 @@ async function main() {
 
     const handleButtonClick = (buttonElement: Spicetify.Playbar.Button) => {
         buttonElement.active = showAllPlaylists = !buttonElement.active;
-        localStorage.setItem('playlist-labels:show-all', JSON.stringify(showAllPlaylists));
+        localStorage.setItem('spicetify-playlist-labels:show-all', JSON.stringify(showAllPlaylists));
         playlistUpdated = true;
         updateTracklist();
     };
