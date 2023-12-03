@@ -189,6 +189,8 @@ async function main() {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    showAllPlaylists = await JSON.parse(localStorage.getItem('spicetify-playlist-labels:show-all') || 'false');
+
     await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {
         getTrackUriToPlaylistData().then((data) => {
             trackUriToPlaylistData = data;
@@ -197,37 +199,16 @@ async function main() {
         });
     });
 
-    const extraControls = document.querySelector(".main-nowPlayingBar-extraControls");
-    const showAllPlaylistsButtonContainer = document.createElement("span");
-    const ShowAllPlaylistsButton = React.memo(() => {
-        const [isClicked, setIsClicked] = useState(false);
-        const initialClasses = 'Button-sc-1dqy6lx-0 Button-small-small-buttonTertiary-iconOnly-isUsingKeyboard-useBrowserDefaultFocusStyle main-genericButton-button';
-        const clickedClasses = initialClasses + ' main-genericButton-buttonActive main-genericButton-buttonActiveDot ZMXGDTbwxKJhbmEDZlYy'
-        const classes = isClicked ? clickedClasses : initialClasses;
+    const handleButtonClick = (buttonElement: Spicetify.Playbar.Button) => {
+        buttonElement.active = showAllPlaylists = !buttonElement.active;
+        localStorage.setItem('spicetify-playlist-labels:show-all', JSON.stringify(showAllPlaylists));
+        playlistUpdated = true;
+        updateTracklist();
+    };
 
-        const handleClick = () => {
-            setIsClicked(!isClicked);
-            showAllPlaylists = !showAllPlaylists;
-            playlistUpdated = true;
-            updateTracklist();
-        };
-
-        return (
-            <Spicetify.ReactComponent.TooltipWrapper
-                label={ isClicked ? "Show Editable Playlist Labels" : "Show All Playlist Labels" }
-                placement="top"
-            >
-                <button className={classes} onClick={handleClick}>
-                    <Spicetify.ReactComponent.IconComponent
-                        dangerouslySetInnerHTML={{ __html: Spicetify.SVGIcons["spotify"] }}
-                        iconSize={16}
-                    />
-                </button>
-            </Spicetify.ReactComponent.TooltipWrapper>
-        );
-    });
-    ReactDOM.render(<ShowAllPlaylistsButton />, showAllPlaylistsButtonContainer)
-    extraControls?.prepend(showAllPlaylistsButtonContainer);
+    // create the playbar toggle button
+    const iconHTML = `<svg data-encore-id="icon" role="img" viewBox="0 0 16 16" class="Svg-img-icon-small">${Spicetify.SVGIcons["spotify"]}</svg>`;
+    const showAllPlaylistsButton = new Spicetify.Playbar.Button("Show All Saved Playlists", iconHTML, handleButtonClick, false, showAllPlaylists);
 
     trackUriToPlaylistData = await getTrackUriToPlaylistData();
 
