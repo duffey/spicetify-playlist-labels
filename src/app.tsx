@@ -215,9 +215,18 @@ async function updateContextMenu() {
     removeSubMenu._element.addEventListener("mouseenter", () => {
         const tippys = document.querySelectorAll("[id*=tippy]")
         if (tippys.length <= 1) return;
-        tippys[tippys.length - 1].remove();
+        const subMenu = tippys[tippys.length - 1];
+        subMenu.style.display = 'none';
         const node = document.querySelectorAll(".main-contextMenu-menuItemButton[aria-expanded=true]")[0];
         node?.setAttribute("aria-expanded", false);
+
+        function restoreSubMenu() {
+            node?.setAttribute("aria-expanded", true);
+            subMenu.style.display = 'block';
+            node?.removeEventListener("mouseenter", restoreSubMenu);
+
+        }
+        node?.addEventListener("mouseenter", restoreSubMenu);
     })
 
     removeSubMenu.register();
