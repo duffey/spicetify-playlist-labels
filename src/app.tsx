@@ -93,7 +93,7 @@ function updateTracklist() {
                 labelColumn = document.createElement("div");
                 const dummyImgSrc = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
-                function getFirstLetters(inputString) {
+                function getFirstCharacters(inputString) {
                     // Split the input string into words
                     const words = inputString.split(' ');
 
@@ -101,10 +101,11 @@ function updateTracklist() {
                     const firstWord = words[0];
                     const secondWord = words.length > 1 ? words[1] : '';
 
-                    // Get the first two letters of each word
-                    const firstLetters = (firstWord.slice(0, 1) + secondWord.slice(0, 1)).toUpperCase();
+                    // Get either one emoji or the first two letters
+                    const firstCharacters = Array.from(firstWord).slice(0, 1).join('') +
+                                            (secondWord ? Array.from(secondWord).slice(0, 1).join('') : '');
 
-                    return firstLetters;
+                    return firstCharacters;
                 }
 
                 ReactDOM.render(
@@ -146,7 +147,7 @@ function updateTracklist() {
                                                     color: 'white',
                                                     fontSize: 14,
                                                     textAlign: 'center',
-                                                }}>{getFirstLetters(playlistData.name)}</div>
+                                                }}>{getFirstCharacters(playlistData.name)}</div>
                                                 : null
                                             }
                                         </div>
