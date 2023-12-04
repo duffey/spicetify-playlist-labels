@@ -63,7 +63,7 @@ function updateTracklist() {
 
         if (!originalTracklistHeaderCss) originalTracklistHeaderCss = getComputedStyle(tracklistHeader).gridTemplateColumns;
         if (originalTracklistHeaderCss && tracklistColumnCss[colIndexInt]) {
-            tracklistHeader.style["grid-template-columns"] = tracklistColumnCss[colIndexInt];
+            tracklistHeader.style.setProperty("grid-template-columns", tracklistColumnCss[colIndexInt], "important");
             newTracklistHeaderCss = tracklistColumnCss[colIndexInt];
         }
     });
@@ -137,7 +137,7 @@ function updateTracklist() {
 
                 if (!originalTracklistTrackCss) originalTracklistTrackCss = getComputedStyle(track).gridTemplateColumns;
                 if (tracklistColumnCss[colIndexInt])
-                    track.style["grid-template-columns"] = newTracklistHeaderCss ? newTracklistHeaderCss : tracklistColumnCss[colIndexInt];
+                    track.style.setProperty("grid-template-columns", newTracklistHeaderCss ? newTracklistHeaderCss : tracklistColumnCss[colIndexInt], "important");
 
             }
         }
