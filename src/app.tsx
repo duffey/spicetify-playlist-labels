@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import './app.css'
-import { getTrackUriToPlaylistData } from "./playlist";
+import { getTrackUriToPlaylistData, getAllPlaylists } from "./playlist";
 import { removeTrackFromPlaylist } from "./api";
 
 let originalTracklistHeaderCss = null;
@@ -12,6 +12,7 @@ let mainElementObserver = null;
 let tracklists = [];
 let oldTracklists = [];
 let trackUriToPlaylistData = {};
+let contents = null;
 let playlistUpdated = false;
 let highlightTrack = null;
 let highlightTrackPath = null;
@@ -84,21 +85,12 @@ function updateTracklist() {
                 }
             }
             if (!labelColumn) {
+
                 // Add column for labels
                 let lastColumn = track.querySelector(".main-trackList-rowSectionEnd");
                 let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
                 lastColumn.setAttribute("aria-colindex", (colIndexInt + 1).toString());
                 labelColumn = document.createElement("div");
-
-                const iconData = '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>';
-                const RemoveIcon = Spicetify.React.memo(() =>
-                    <Spicetify.ReactComponent.IconComponent semanticColor='textBase'
-                        dangerouslySetInnerHTML={{ __html: iconData }}
-                        width="14px"
-                        height="14px"
-                        viewBox='0 0 14 14'
-                    />
-                );
 
                 ReactDOM.render(
                     <div className="spicetify-playlist-labels-labels-container">
@@ -115,35 +107,19 @@ function updateTracklist() {
                                         placement="top"
                                     >
                                         <div className="spicetify-playlist-labels-label-container">
-                                            <img width="40px" style={{
+                                            <img width="28px" style={{
                                                 borderRadius: '4px',
                                                 cursor: 'pointer'
                                             }} src={playlistData.image} onClick={(e: Event) => {
-                                                    e.stopPropagation()
-                                                    const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
-                                                    highlightTrack = trackUri;
-                                                    highlightTrackPath = path;
-                                                    if (path) Spicetify.Platform.History.push({
-                                                        pathname: path,
-                                                        search: `?uid=${playlistData.trackUid}`
-                                                    });
-                                            }}/>
-                                            { playlistData.canEdit ?
-                                                <Spicetify.ReactComponent.TooltipWrapper
-                                                    label={`Remove from ${playlistData.name}`}
-                                                    placement="top"
-                                                >
-                                                    <button onClick={(e: Event) => {
-                                                        e.stopPropagation();
-                                                        removeTrackFromPlaylist(playlistData.uri, trackUri)
-                                                        trackUriToPlaylistData[trackUri] = trackUriToPlaylistData[trackUri].filter((otherPlaylistData) => otherPlaylistData.name !== playlistData.name);
-                                                        playlistUpdated = true;
-                                                        updateTracklist();
-                                                    }}>
-                                                        <RemoveIcon/>
-                                                    </button>
-                                                </Spicetify.ReactComponent.TooltipWrapper>
-                                            : null}
+                                                e.stopPropagation()
+                                                const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
+                                                highlightTrack = trackUri;
+                                                highlightTrackPath = path;
+                                                if (path) Spicetify.Platform.History.push({
+                                                    pathname: path,
+                                                    search: `?uid=${playlistData.trackUid}`
+                                                });
+                                            }} />
                                         </div>
                                     </Spicetify.ReactComponent.TooltipWrapper>
                                 );
@@ -154,7 +130,7 @@ function updateTracklist() {
 
                 labelColumn.setAttribute("aria-colindex", colIndexInt.toString());
                 labelColumn.role = "gridcell";
-                labelColumn.style.display = "flex";
+                labelColumn.style.display = "grid";
                 labelColumn.classList.add("main-trackList-rowSectionVariable");
                 labelColumn.classList.add("spicetify-playlist-labels");
                 track.insertBefore(labelColumn, lastColumn);
@@ -184,6 +160,81 @@ async function observerCallback() {
     }
 }
 
+let registeredMenus = [];
+
+async function updateContextMenu() {
+    while ((registeredMenu = registeredMenus.pop()))
+        registeredMenus.deregister();
+
+    // Add context menu
+    function isTrackInOtherPlaylist(uri) {
+        if (!Spicetify.URI.isTrack(uri[0])) return;
+        return trackUriToPlaylistData[uri]?.some((playlistData) => {
+            const playlistId = playlistUriToPlaylistId(playlistData.uri);
+            return playlistData.canEdit && Spicetify.Platform.History.location.pathname !== `/playlist/${playlistId}`;
+        });
+    }
+
+    const removeSubMenu = new Spicetify.ContextMenu.SubMenu(
+        "Remove from playlist",
+        [],
+        isTrackInOtherPlaylist,
+        false,
+    );
+
+    removeSubMenu._element.addEventListener("mouseenter", () => {
+        const tippys = document.querySelectorAll("[id*=tippy]")
+        if (tippys.length <= 1) return;
+        tippys[tippys.length - 1].remove();
+        const node = document.querySelectorAll(".main-contextMenu-menuItemButton[aria-expanded=true]")[0];
+        node?.setAttribute("aria-expanded", false);
+    })
+
+    removeSubMenu.register();
+    registeredMenus.push(removeSubMenu);
+
+    function addMenuItems(subMenu, item) {
+        if (item.type === 'folder') {
+            const playlists = getAllPlaylists(item);
+            const newSubMenu = new Spicetify.ContextMenu.SubMenu(
+                item.name,
+                [],
+                (uri) => {
+                    const trackPlaylists = trackUriToPlaylistData[uri];
+                    return trackPlaylists.some((playlist) => playlists.some(other => other.uri === playlist.uri && playlist.canEdit));
+                },
+                false
+            );
+            subMenu.addItem(newSubMenu);
+            item.items.forEach((item) => { addMenuItems(newSubMenu, item); });
+            registeredMenus.push(newSubMenu);
+            return;
+        }
+
+        if (item.type !== 'playlist' || !(item.canAdd && item.canRemove)) return;
+
+        const subMenuItem = new Spicetify.ContextMenu.Item(
+            item.name,
+            (uri) => {
+                removeTrackFromPlaylist(item.uri, uri)
+                trackUriToPlaylistData[uri] = trackUriToPlaylistData[uri].filter((otherPlaylistData) => otherPlaylistData.uri !== item.uri);
+                updateContextMenu();
+                playlistUpdated = true;
+                updateTracklist();
+            },
+            (uri) => {
+                return trackUriToPlaylistData[uri].some((playlistData) => playlistData.uri === item.uri && playlistData.canEdit);
+            },
+            null,
+            false
+        );
+        subMenu.addItem(subMenuItem);
+        registeredMenus.push(subMenuItem);
+    }
+
+    contents.items.forEach((item) => { addMenuItems(removeSubMenu, item); });
+}
+
 async function main() {
     while (!Spicetify?.showNotification) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -193,7 +244,8 @@ async function main() {
 
     await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {
         getTrackUriToPlaylistData().then((data) => {
-            trackUriToPlaylistData = data;
+            [trackUriToPlaylistData, contents] = data;
+            updateContextMenu();
             playlistUpdated = true;
             updateTracklist();
         });
@@ -210,7 +262,8 @@ async function main() {
     const iconHTML = `<svg data-encore-id="icon" role="img" viewBox="0 0 16 16" class="Svg-img-icon-small">${Spicetify.SVGIcons["spotify"]}</svg>`;
     const showAllPlaylistsButton = new Spicetify.Playbar.Button("Show All Saved Playlists", iconHTML, handleButtonClick, false, showAllPlaylists);
 
-    trackUriToPlaylistData = await getTrackUriToPlaylistData();
+    [trackUriToPlaylistData, contents] = await getTrackUriToPlaylistData();
+    updateContextMenu();
 
     mainElementObserver = new MutationObserver(() => {
         updateTracklist();

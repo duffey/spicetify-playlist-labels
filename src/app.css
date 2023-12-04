@@ -2,43 +2,13 @@
     height: var(--row-height);
     align-items: center;
     display: flex;
-    flex-wrap: wrap;
     overflow: hidden;
-    gap: 7px;
+    gap: 5px;
 }
 
 .spicetify-playlist-labels-label-container {
     position: relative;
-    height: 40px;
-}
-
-.spicetify-playlist-labels-label-container button {
-    visibility: hidden;
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 14px;
-    height: 14px;
-    background: rgba(0, 0, 0, 0.5);
-    cursor: pointer;
-    border: 0;
-    border-top-right-radius: 4px;
-    border-bottom-left-radius: 4px;
-    vertical-align: top;
-}
-
-.spicetify-playlist-labels-label-container:hover button {
-    visibility: visible;
-}
-
-.spicetify-playlist-labels-label-container button:hover {
-    background-color: var(--text-negative);
-}
-
-.spicetify-playlist-labels-label-container button svg {
-    padding: 1px;
-    vertical-align: top;
-    fill: white;
+    height: 28px;
 }
 
 .spicetify-playlist-labels-label-container > img {

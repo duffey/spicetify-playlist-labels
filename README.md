@@ -1,6 +1,6 @@
 # Spicetify Playlist Labels
 
-Adds playlist labels to your tracklist, indicating the playlist(s) in which a track is included. Clicking labels jumps to the playlist and clicking the 'X' icon removes the track from the playlist.
+Adds playlist labels to your tracklist, indicating the playlists in which a track is included. Clicking a label jumps to the playlist.
 
 ![Screenshot](screenshot.png)
 

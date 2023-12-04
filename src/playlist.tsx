@@ -1,13 +1,13 @@
 import {getContents, getPlaylistItems, getPlaylistColor} from "./api";
 
-function getAllPlaylists(contents) {
+export function getAllPlaylists(contents) {
     let playlists = [];
 
-    function traverse(folder) {
-        if (folder.type === 'playlist') {
-            playlists.push(folder);
-        } else if (folder.type === 'folder' && folder.items) {
-            folder.items.forEach(item => traverse(item));
+    function traverse(item) {
+        if (item.type === 'playlist') {
+            playlists.push(item);
+        } else if (item.type === 'folder' && item.items) {
+            item.items.forEach(i => traverse(i));
         }
     }
 
@@ -21,6 +21,7 @@ export async function getTrackUriToPlaylistData() {
     const playlists = getAllPlaylists(contents);
     const playlistItems = await Promise.all(playlists.map((playlist) => getPlaylistItems(playlist.uri)));
     const trackUriToPlaylistData = {};
+
     playlistItems.forEach((playlistItems, index) => {
         playlistItems.forEach((playlistItem) => {
             const trackUri = playlistItem.uri;
@@ -38,5 +39,5 @@ export async function getTrackUriToPlaylistData() {
             }
         });
     });
-    return trackUriToPlaylistData;
+    return [trackUriToPlaylistData, contents];
 }
