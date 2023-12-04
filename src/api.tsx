@@ -13,7 +13,7 @@ export async function getPlaylistColor(imageUri) {
         fetchExtractedColors,
         { uris: [imageUri] },
     );
-    return data.data?.extractedColors?.[0]?.colorRaw?.hex;
+    return data.data?.extractedColors?.[0];
 }
 
 export async function removeTrackFromPlaylist(playlistUri, trackUri) {

@@ -91,12 +91,27 @@ function updateTracklist() {
                 let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
                 lastColumn.setAttribute("aria-colindex", (colIndexInt + 1).toString());
                 labelColumn = document.createElement("div");
+                const dummyImgSrc = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+
+                function getFirstLetters(inputString) {
+                    // Split the input string into words
+                    const words = inputString.split(' ');
+
+                    // Extract the first two words
+                    const firstWord = words[0];
+                    const secondWord = words.length > 1 ? words[1] : '';
+
+                    // Get the first two letters of each word
+                    const firstLetters = (firstWord.slice(0, 1) + secondWord.slice(0, 1)).toUpperCase();
+
+                    return firstLetters;
+                }
 
                 ReactDOM.render(
                     <div className="spicetify-playlist-labels-labels-container">
                         {
                             trackUriToPlaylistData[trackUri]?.map((playlistData) => {
-                                if (!showAllPlaylists && !playlistData.canEdit) return null;
+                                if (!showAllPlaylists && playlistData.isSpotifyPlaylist) return null;
 
                                 const playlistId = playlistUriToPlaylistId(playlistData.uri);
                                 if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return null;
@@ -106,20 +121,34 @@ function updateTracklist() {
                                         label={playlistData.name}
                                         placement="top"
                                     >
-                                        <div className="spicetify-playlist-labels-label-container">
+                                        <div className="spicetify-playlist-labels-label-container" style={{
+                                            cursor: 'pointer',
+                                        }} onClick={(e: Event) => {
+                                            e.stopPropagation()
+                                            const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
+                                            highlightTrack = trackUri;
+                                            highlightTrackPath = path;
+                                            if (path) Spicetify.Platform.History.push({
+                                                pathname: path,
+                                                search: `?uid=${playlistData.trackUid}`
+                                            });
+                                        }}>
                                             <img width="28px" style={{
                                                 borderRadius: '4px',
-                                                cursor: 'pointer'
-                                            }} src={playlistData.image} onClick={(e: Event) => {
-                                                e.stopPropagation()
-                                                const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
-                                                highlightTrack = trackUri;
-                                                highlightTrackPath = path;
-                                                if (path) Spicetify.Platform.History.push({
-                                                    pathname: path,
-                                                    search: `?uid=${playlistData.trackUid}`
-                                                });
-                                            }} />
+                                                background: `linear-gradient(0deg, ${playlistData.color}, ${playlistData.colorLight})`,
+                                            }} src={playlistData.isMosaic ? dummyImgSrc : playlistData.image} />
+                                            {playlistData.isMosaic ?
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '50%',
+                                                    transform: 'translate(-50%, -50%)',
+                                                    color: 'white',
+                                                    fontSize: 14,
+                                                    textAlign: 'center',
+                                                }}>{getFirstLetters(playlistData.name)}</div>
+                                                : null
+                                            }
                                         </div>
                                     </Spicetify.ReactComponent.TooltipWrapper>
                                 );
@@ -164,7 +193,7 @@ let registeredMenus = [];
 
 async function updateContextMenu() {
     while ((registeredMenu = registeredMenus.pop()))
-        registeredMenus.deregister();
+        registeredMenu.deregister();
 
     // Add context menu
     function isTrackInOtherPlaylist(uri) {
