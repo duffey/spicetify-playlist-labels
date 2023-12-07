@@ -93,20 +93,26 @@ function updateTracklist() {
                 labelColumn = document.createElement("div");
                 const dummyImgSrc = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
-                function getFirstCharacters(inputString) {
+                function isHalfWidth(char) {
+                    // Check if the character is half-width based on its Unicode code point
+                    return (char.codePointAt(0) <= 255 || (char.codePointAt(0) >= 65281 && char.codePointAt(0) <= 65374));
+                  }
+                  
+                  function getFirstCharacters(inputString) {
                     // Split the input string into words
                     const words = inputString.split(' ');
-
+                  
                     // Extract the first two words
                     const firstWord = words[0];
                     const secondWord = words.length > 1 ? words[1] : '';
-
-                    // Get either one emoji or the first two letters
-                    const firstCharacters = Array.from(firstWord).slice(0, 1).join('') +
-                                            (secondWord ? Array.from(secondWord).slice(0, 1).join('') : '');
-
-                    return firstCharacters;
-                }
+                    const firstCharacter = Array.from(firstWord).slice(0, 1).join('');
+                    const secondCharacter = secondWord ? Array.from(secondWord).slice(0, 1).join('') : '';
+                  
+                    // Check if the first character of the first word is half-width
+                    const isFirstCharacterHalfWidth = isHalfWidth(firstWord.charAt(0));
+                  
+                    return firstCharacter + (isFirstCharacterHalfWidth ? secondCharacter : '');
+                  }
 
                 ReactDOM.render(
                     <div className="spicetify-playlist-labels-labels-container">

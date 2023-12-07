@@ -9,11 +9,15 @@ export async function getPlaylistItems(uri) {
 
 export async function getPlaylistColor(imageUri) {
     const { fetchExtractedColors } = Spicetify.GraphQL.Definitions;
-    const data = await Spicetify.GraphQL.Request(
-        fetchExtractedColors,
-        { uris: [imageUri] },
-    );
-    return data.data?.extractedColors?.[0];
+    try {
+        const data = await Spicetify.GraphQL.Request(
+            fetchExtractedColors,
+            { uris: [imageUri] },
+        );
+        return data.data?.extractedColors?.[0];
+    } catch (error) {
+        return null;
+    }
 }
 
 export async function removeTrackFromPlaylist(playlistUri, trackUri) {
