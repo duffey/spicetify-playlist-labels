@@ -1,6 +1,6 @@
 {
   "name": "Playlist Labels",
-  "description": "Adds interactive playlist labels to your tracklist",
+  "description": "Adds playlist labels to your tracklist",
   "preview": "preview.png",
   "main": "dist/spicetify-playlist-labels.js",
   "readme": "README.md",
