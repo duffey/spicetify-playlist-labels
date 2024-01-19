@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import './app.css'
-import { getTrackUriToPlaylistData, getAllPlaylists } from "./playlist";
-import { removeTrackFromPlaylist } from "./api";
+import { getTrackUriToPlaylistData } from "./playlist";
 
 let originalTracklistHeaderCss = null;
 let originalTracklistTrackCss = null;
@@ -14,9 +13,6 @@ let oldTracklists = [];
 let trackUriToPlaylistData = {};
 let contents = null;
 let playlistUpdated = false;
-let highlightTrack = null;
-let highlightTrackPath = null;
-let showAllPlaylists = false;
 
 function playlistUriToPlaylistId(uri) {
     return uri.match(/spotify:playlist:(.*)/)[1];
@@ -72,54 +68,27 @@ function updateTracklist() {
         const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
         for (const track of tracks) {
             const trackUri = getTracklistTrackUri(track);
-            if (highlightTrack === trackUri && Spicetify.Platform.History.location.pathname === highlightTrackPath) {
-                track.click();
-                highlightTrack = null;
-            }
 
             let labelColumn = track.querySelector(".spicetify-playlist-labels");
+
             if (playlistUpdated) {
                 if (labelColumn) {
                     labelColumn.remove();
                     labelColumn = null;
                 }
             }
-            if (!labelColumn) {
 
+            if (!labelColumn) {
                 // Add column for labels
                 let lastColumn = track.querySelector(".main-trackList-rowSectionEnd");
                 let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
                 lastColumn.setAttribute("aria-colindex", (colIndexInt + 1).toString());
                 labelColumn = document.createElement("div");
-                const dummyImgSrc = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-
-                function isHalfWidth(char) {
-                    // Check if the character is half-width based on its Unicode code point
-                    return (char.codePointAt(0) <= 255 || (char.codePointAt(0) >= 65281 && char.codePointAt(0) <= 65374));
-                  }
-                  
-                  function getFirstCharacters(inputString) {
-                    // Split the input string into words
-                    const words = inputString.split(' ');
-                  
-                    // Extract the first two words
-                    const firstWord = words[0];
-                    const secondWord = words.length > 1 ? words[1] : '';
-                    const firstCharacter = Array.from(firstWord).slice(0, 1).join('');
-                    const secondCharacter = secondWord ? Array.from(secondWord).slice(0, 1).join('') : '';
-                  
-                    // Check if the first character of the first word is half-width
-                    const isFirstCharacterHalfWidth = isHalfWidth(firstWord.charAt(0));
-                  
-                    return firstCharacter + (isFirstCharacterHalfWidth ? secondCharacter : '');
-                  }
 
                 ReactDOM.render(
                     <div className="spicetify-playlist-labels-labels-container">
                         {
                             trackUriToPlaylistData[trackUri]?.map((playlistData) => {
-                                if (!showAllPlaylists && playlistData.isSpotifyPlaylist) return null;
-
                                 const playlistId = playlistUriToPlaylistId(playlistData.uri);
                                 if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return null;
 
@@ -128,34 +97,8 @@ function updateTracklist() {
                                         label={playlistData.name}
                                         placement="top"
                                     >
-                                        <div className="spicetify-playlist-labels-label-container" style={{
-                                            cursor: 'pointer',
-                                        }} onClick={(e: Event) => {
-                                            e.stopPropagation()
-                                            const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
-                                            highlightTrack = trackUri;
-                                            highlightTrackPath = path;
-                                            if (path) Spicetify.Platform.History.push({
-                                                pathname: path,
-                                                search: `?uid=${playlistData.trackUid}`
-                                            });
-                                        }}>
-                                            <img width="28px" style={{
-                                                borderRadius: '4px',
-                                                background: `linear-gradient(0deg, ${playlistData.color}, ${playlistData.colorLight})`,
-                                            }} src={playlistData.isMosaic ? dummyImgSrc : playlistData.image} />
-                                            {playlistData.isMosaic ?
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    top: '50%',
-                                                    left: '50%',
-                                                    transform: 'translate(-50%, -50%)',
-                                                    color: 'white',
-                                                    fontSize: 14,
-                                                    textAlign: 'center',
-                                                }}>{getFirstCharacters(playlistData.name)}</div>
-                                                : null
-                                            }
+                                        <div className="spicetify-playlist-labels-label-container">
+                                            <img src={playlistData.image} />
                                         </div>
                                     </Spicetify.ReactComponent.TooltipWrapper>
                                 );
@@ -171,12 +114,13 @@ function updateTracklist() {
                 labelColumn.classList.add("spicetify-playlist-labels");
                 track.insertBefore(labelColumn, lastColumn);
 
-                if (!originalTracklistTrackCss) originalTracklistTrackCss = getComputedStyle(track).gridTemplateColumns;
+                if (!originalTracklistTrackCss)
+                    originalTracklistTrackCss = getComputedStyle(track).gridTemplateColumns;
                 if (tracklistColumnCss[colIndexInt])
                     track.style.setProperty("grid-template-columns", newTracklistHeaderCss ? newTracklistHeaderCss : tracklistColumnCss[colIndexInt], "important");
-
             }
         }
+
         playlistUpdated = false;
     }
 }
@@ -196,119 +140,19 @@ async function observerCallback() {
     }
 }
 
-let registeredMenus = [];
-
-async function updateContextMenu() {
-    while ((registeredMenu = registeredMenus.pop()))
-        registeredMenu.deregister();
-
-    // Add context menu
-    function isTrackInOtherPlaylist(uri) {
-        if (!Spicetify.URI.isTrack(uri[0])) return;
-        return trackUriToPlaylistData[uri]?.some((playlistData) => {
-            const playlistId = playlistUriToPlaylistId(playlistData.uri);
-            return playlistData.canEdit && Spicetify.Platform.History.location.pathname !== `/playlist/${playlistId}`;
-        });
-    }
-
-    const removeSubMenu = new Spicetify.ContextMenu.SubMenu(
-        "Remove from playlist",
-        [],
-        isTrackInOtherPlaylist,
-        false,
-    );
-
-    removeSubMenu._element.addEventListener("mouseenter", () => {
-        const tippys = document.querySelectorAll("[id*=tippy]")
-        if (tippys.length <= 1) return;
-        const subMenu = tippys[tippys.length - 1];
-        subMenu.style.display = 'none';
-        const node = document.querySelectorAll(".main-contextMenu-menuItemButton[aria-expanded=true]")[0];
-        node?.setAttribute("aria-expanded", false);
-
-        function restoreSubMenu() {
-            node?.setAttribute("aria-expanded", true);
-            subMenu.style.display = 'block';
-            node?.removeEventListener("mouseenter", restoreSubMenu);
-
-        }
-        node?.addEventListener("mouseenter", restoreSubMenu);
-    })
-
-    removeSubMenu.register();
-    registeredMenus.push(removeSubMenu);
-
-    function addMenuItems(subMenu, item) {
-        if (item.type === 'folder') {
-            const playlists = getAllPlaylists(item);
-            const newSubMenu = new Spicetify.ContextMenu.SubMenu(
-                item.name,
-                [],
-                (uri) => {
-                    const trackPlaylists = trackUriToPlaylistData[uri];
-                    return trackPlaylists.some((playlist) => playlists.some(other => other.uri === playlist.uri && playlist.canEdit));
-                },
-                false
-            );
-            subMenu.addItem(newSubMenu);
-            item.items.forEach((item) => { addMenuItems(newSubMenu, item); });
-            registeredMenus.push(newSubMenu);
-            return;
-        }
-
-        if (item.type !== 'playlist' || !(item.canAdd && item.canRemove)) return;
-
-        const subMenuItem = new Spicetify.ContextMenu.Item(
-            item.name,
-            (uri) => {
-                removeTrackFromPlaylist(item.uri, uri)
-                trackUriToPlaylistData[uri] = trackUriToPlaylistData[uri].filter((otherPlaylistData) => otherPlaylistData.uri !== item.uri);
-                updateContextMenu();
-                playlistUpdated = true;
-                updateTracklist();
-            },
-            (uri) => {
-                return trackUriToPlaylistData[uri].some((playlistData) => playlistData.uri === item.uri && playlistData.canEdit);
-            },
-            null,
-            false
-        );
-        subMenu.addItem(subMenuItem);
-        registeredMenus.push(subMenuItem);
-    }
-
-    contents.items.forEach((item) => { addMenuItems(removeSubMenu, item); });
-}
-
 async function main() {
     while (!Spicetify?.showNotification) {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    showAllPlaylists = await JSON.parse(localStorage.getItem('spicetify-playlist-labels:show-all') || 'false');
-
     await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {
         getTrackUriToPlaylistData().then((data) => {
             [trackUriToPlaylistData, contents] = data;
-            updateContextMenu();
             playlistUpdated = true;
-            updateTracklist();
         });
     });
 
-    const handleButtonClick = (buttonElement: Spicetify.Playbar.Button) => {
-        buttonElement.active = showAllPlaylists = !buttonElement.active;
-        localStorage.setItem('spicetify-playlist-labels:show-all', JSON.stringify(showAllPlaylists));
-        playlistUpdated = true;
-        updateTracklist();
-    };
-
-    // create the playbar toggle button
-    const iconHTML = `<svg data-encore-id="icon" role="img" viewBox="0 0 16 16" class="Svg-img-icon-small">${Spicetify.SVGIcons["spotify"]}</svg>`;
-    const showAllPlaylistsButton = new Spicetify.Playbar.Button("Show All Saved Playlists", iconHTML, handleButtonClick, false, showAllPlaylists);
-
     [trackUriToPlaylistData, contents] = await getTrackUriToPlaylistData();
-    updateContextMenu();
 
     mainElementObserver = new MutationObserver(() => {
         updateTracklist();

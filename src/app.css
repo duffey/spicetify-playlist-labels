@@ -8,10 +8,12 @@
 
 .spicetify-playlist-labels-label-container {
     position: relative;
-    height: 28px;
+    height: 24px;
 }
 
 .spicetify-playlist-labels-label-container > img {
+    width: 24px;
     height: 100%;
     object-fit: cover;
+    border-radius: 2px;
 }
