@@ -89,6 +89,8 @@ function updateTracklist() {
                     <div className="spicetify-playlist-labels-labels-container">
                         {
                             trackUriToPlaylistData[trackUri]?.map((playlistData) => {
+                                if (!showAllPlaylists && !playlistData.isOwnPlaylist) return null;
+
                                 const playlistId = playlistUriToPlaylistId(playlistData.uri);
                                 if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return null;
 
@@ -145,12 +147,25 @@ async function main() {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    showAllPlaylists = await JSON.parse(localStorage.getItem('spicetify-playlist-labels:show-all') || 'false');
+
     await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {
         getTrackUriToPlaylistData().then((data) => {
             [trackUriToPlaylistData, contents] = data;
             playlistUpdated = true;
         });
     });
+
+    const handleButtonClick = (buttonElement: Spicetify.Playbar.Button) => {
+        buttonElement.active = showAllPlaylists = !buttonElement.active;
+        localStorage.setItem('spicetify-playlist-labels:show-all', JSON.stringify(showAllPlaylists));
+        playlistUpdated = true;
+        updateTracklist();
+    };
+
+    // create the playbar toggle button
+    const iconHTML = `<svg data-encore-id="icon" role="img" viewBox="0 0 16 16" class="Svg-img-icon-small">${Spicetify.SVGIcons["spotify"]}</svg>`;
+    const showAllPlaylistsButton = new Spicetify.Playbar.Button("Show All Saved Playlists", iconHTML, handleButtonClick, false, showAllPlaylists);
 
     [trackUriToPlaylistData, contents] = await getTrackUriToPlaylistData();
 

@@ -1,10 +1,10 @@
 import { getContents, getPlaylistItems } from "./api";
 
-export function getAllOwnPlaylists(contents) {
+export function getAllPlaylists(contents) {
     let playlists = [];
 
     function traverse(item) {
-        if (item.type === 'playlist' && item.isOwnedBySelf) {
+        if (item.type === 'playlist') {
             playlists.push(item);
         } else if (item.type === 'folder' && item.items) {
             item.items.forEach(i => traverse(i));
@@ -18,7 +18,7 @@ export function getAllOwnPlaylists(contents) {
 
 export async function getTrackUriToPlaylistData() {
     const contents = await getContents();
-    const playlists = getAllOwnPlaylists(contents);
+    const playlists = getAllPlaylists(contents);
     const playlistItems = await Promise.all(playlists.map((playlist) => getPlaylistItems(playlist.uri)));
     const trackUriToPlaylistData = {};
 
@@ -34,6 +34,7 @@ export async function getTrackUriToPlaylistData() {
                     name: playlists[index].name,
                     trackUid: playlistItem.uid,
                     image: playlists[index].images[0]?.url || '',
+                    isOwnPlaylist: playlists[index].isOwnedBySelf
                 });
             }
         });
