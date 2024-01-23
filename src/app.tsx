@@ -153,6 +153,7 @@ async function main() {
         getTrackUriToPlaylistData().then((data) => {
             [trackUriToPlaylistData, contents] = data;
             playlistUpdated = true;
+            updateTracklist();
         });
     });
 
