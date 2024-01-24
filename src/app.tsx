@@ -13,6 +13,7 @@ let oldTracklists = [];
 let trackUriToPlaylistData = {};
 let contents = null;
 let playlistUpdated = false;
+let showAllPlaylists = false;
 
 function playlistUriToPlaylistId(uri) {
     return uri.match(/spotify:playlist:(.*)/)[1];
