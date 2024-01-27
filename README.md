@@ -29,7 +29,6 @@ Thanks to [WildGenius](https://github.com/WildGenius) and [brimell](https://gith
 <img src="images/4-stars.jpg" width="100px">
 <img src="images/4.5-stars.jpg" width="100px">
 <img src="images/5-stars.jpg" width="100px">
-<img src="images/5-stars-2.jpg" width="100px">
 </p>
 
 
