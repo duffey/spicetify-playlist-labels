@@ -14,6 +14,8 @@ let trackUriToPlaylistData = {};
 let contents = null;
 let playlistUpdated = false;
 let showAllPlaylists = false;
+let highlightTrack = null;
+let highlightTrackPath = null;
 
 function playlistUriToPlaylistId(uri) {
     return uri.match(/spotify:playlist:(.*)/)[1];
@@ -69,6 +71,10 @@ function updateTracklist() {
         const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
         for (const track of tracks) {
             const trackUri = getTracklistTrackUri(track);
+            if (highlightTrack === trackUri && Spicetify.Platform.History.location.pathname === highlightTrackPath) {
+                track.click();
+                highlightTrack = null;
+            }
 
             let labelColumn = track.querySelector(".spicetify-playlist-labels");
 
@@ -100,7 +106,18 @@ function updateTracklist() {
                                         label={playlistData.name}
                                         placement="top"
                                     >
-                                        <div className="spicetify-playlist-labels-label-container">
+                                        <div className="spicetify-playlist-labels-label-container" style={{
+                                            cursor: 'pointer',
+                                        }} onClick={(e: Event) => {
+                                            e.stopPropagation();
+                                            const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
+                                            highlightTrack = trackUri;
+                                            highlightTrackPath = path;
+                                            if (path) Spicetify.Platform.History.push({
+                                                pathname: path,
+                                                search: `?uid=${playlistData.trackUid}`
+                                            });
+                                        }}>
                                             <img src={playlistData.image} />
                                         </div>
                                     </Spicetify.ReactComponent.TooltipWrapper>
