@@ -1,19 +1,55 @@
+:root {
+    --spicetify-playlist-labels-size: 28px;
+    --spicetify-playlist-labels-gap: 6px;
+    --spicetify-playlist-labels-container-width: calc(var(--spicetify-playlist-labels-size) * 8 + var(--spicetify-playlist-labels-gap) * 7);
+    --spicetify-playlist-labels-column-width: calc(var(--spicetify-playlist-labels-size) * 8 + var(--spicetify-playlist-labels-gap) * 7 + 12px + 120px);
+}
+
 .spicetify-playlist-labels-labels-container {
+    width: var(--spicetify-playlist-labels-container-width);
     height: var(--row-height);
     align-items: center;
     display: flex;
     overflow: hidden;
-    gap: 5px;
+    gap: var(--spicetify-playlist-labels-gap);
+    justify-content: flex-end;
 }
 
 .spicetify-playlist-labels-label-container {
     position: relative;
-    height: 24px;
+    height: calc(var(--row-height) * 0.5);
 }
 
 .spicetify-playlist-labels-label-container > img {
-    width: 24px;
+    width: calc(var(--row-height) * 0.5);
     height: 100%;
     object-fit: cover;
-    border-radius: 2px;
+    border-radius: calc(var(--row-height) * 0.5 * 0.1);
+}
+
+.main-trackList-trackList.main-trackList-indexable[aria-colcount="4"] .main-trackList-trackListRowGrid {
+  grid-template-columns:
+    [index] var(--tracklist-index-column-width, 16px)
+    [first] minmax(120px, var(--col1, 4fr))
+    [var1] minmax(120px, var(--col2, 2fr))
+    [last] minmax(var(--spicetify-playlist-labels-column-width), var(--col2, 1fr))
+}
+
+.main-trackList-trackList.main-trackList-indexable[aria-colcount="5"] .main-trackList-trackListRowGrid {
+  grid-template-columns:
+    [index] var(--tracklist-index-column-width, 16px)
+    [first] minmax(120px, var(--col1, 6fr))
+    [var1] minmax(120px, var(--col2, 4fr))
+    [var2] minmax(120px, var(--col3, 3fr))
+    [last] minmax(var(--spicetify-playlist-labels-column-width), var(--col4, 1fr)) !important;
+}
+
+.main-trackList-trackList.main-trackList-indexable[aria-colcount="6"] .main-trackList-trackListRowGrid {
+  grid-template-columns:
+    [index] var(--tracklist-index-column-width, 16px)
+    [first] minmax(120px, var(--col1, 6fr))
+    [var1] minmax(120px, var(--col2, 4fr))
+    [var2] minmax(120px, var(--col3, 3fr))
+    [var3] minmax(120px, var(--col4, 2fr))
+    [last] minmax(var(--spicetify-playlist-labels-column-width), var(--col5, 1fr)) !important;
 }

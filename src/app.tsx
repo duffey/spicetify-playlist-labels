@@ -3,15 +3,12 @@ import ReactDOM from 'react-dom';
 import './app.css'
 import { getTrackUriToPlaylistData } from "./playlist";
 
-let originalTracklistHeaderCss = null;
-let originalTracklistTrackCss = null;
 let oldMainElement = null;
 let mainElement = null;
 let mainElementObserver = null;
 let tracklists = [];
 let oldTracklists = [];
 let trackUriToPlaylistData = {};
-let contents = null;
 let playlistUpdated = false;
 let showAllPlaylists = false;
 let highlightTrack = null;
@@ -36,36 +33,6 @@ function getTracklistTrackUri(tracklistElement) {
 function updateTracklist() {
     oldTracklists = tracklists;
     tracklists = Array.from(document.querySelectorAll(".main-trackList-indexable"));
-    let tracklistsChanged = tracklists.length !== oldTracklists.length;
-    for (let i = 0; i < tracklists.length; i++) if (!tracklists[i].isEqualNode(oldTracklists[i])) tracklistsChanged = true;
-    if (tracklistsChanged) {
-        originalTracklistHeaderCss = null;
-        originalTracklistTrackCss = null;
-    }
-
-    const tracklistColumnCss = [
-        null,
-        null,
-        null,
-        null,
-        "[index] 16px [first] 4fr [var1] 1fr [var2] 2fr [last] minmax(120px,1fr)",
-        "[index] 16px [first] 6fr [var1] 4fr [var2] 3fr [var3] 4fr [last] minmax(120px,1fr)",
-        "[index] 16px [first] 6fr [var1] 4fr [var2] 3fr [var3] minmax(120px,2fr) [var3] 2fr [last] minmax(120px,1fr)",
-    ];
-
-    let newTracklistHeaderCss = null;
-    const tracklistHeaders = document.querySelectorAll(".main-trackList-trackListHeaderRow");
-    // No tracklist header on Artist page
-    tracklistHeaders.forEach((tracklistHeader) => {
-        let lastColumn = tracklistHeader.querySelector(".main-trackList-rowSectionEnd");
-        let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
-
-        if (!originalTracklistHeaderCss) originalTracklistHeaderCss = getComputedStyle(tracklistHeader).gridTemplateColumns;
-        if (originalTracklistHeaderCss && tracklistColumnCss[colIndexInt]) {
-            tracklistHeader.style.setProperty("grid-template-columns", tracklistColumnCss[colIndexInt], "important");
-            newTracklistHeaderCss = tracklistColumnCss[colIndexInt];
-        }
-    });
 
     for (const tracklist of tracklists) {
         const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
@@ -76,21 +43,20 @@ function updateTracklist() {
                 highlightTrack = null;
             }
 
-            let labelColumn = track.querySelector(".spicetify-playlist-labels");
+            let labelContainer = track.querySelector(".spicetify-playlist-labels");
 
             if (playlistUpdated) {
-                if (labelColumn) {
-                    labelColumn.remove();
-                    labelColumn = null;
+                if (labelContainer) {
+                    labelContainer.remove();
+                    labelContainer = null;
                 }
             }
 
-            if (!labelColumn) {
+            if (!labelContainer) {
                 // Add column for labels
                 let lastColumn = track.querySelector(".main-trackList-rowSectionEnd");
-                let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
-                lastColumn.setAttribute("aria-colindex", (colIndexInt + 1).toString());
-                labelColumn = document.createElement("div");
+                labelContainer = document.createElement("div");
+                labelContainer.classList.add("spicetify-playlist-labels");
 
                 ReactDOM.render(
                     <div className="spicetify-playlist-labels-labels-container">
@@ -125,19 +91,9 @@ function updateTracklist() {
                             })
                         }
                     </div>
-                    , labelColumn);
+                    , labelContainer);
 
-                labelColumn.setAttribute("aria-colindex", colIndexInt.toString());
-                labelColumn.role = "gridcell";
-                labelColumn.style.display = "grid";
-                labelColumn.classList.add("main-trackList-rowSectionVariable");
-                labelColumn.classList.add("spicetify-playlist-labels");
-                track.insertBefore(labelColumn, lastColumn);
-
-                if (!originalTracklistTrackCss)
-                    originalTracklistTrackCss = getComputedStyle(track).gridTemplateColumns;
-                if (tracklistColumnCss[colIndexInt])
-                    track.style.setProperty("grid-template-columns", newTracklistHeaderCss ? newTracklistHeaderCss : tracklistColumnCss[colIndexInt], "important");
+                lastColumn.insertBefore(labelContainer, lastColumn.firstChild);
             }
         }
 
@@ -169,7 +125,7 @@ async function main() {
 
     await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {
         getTrackUriToPlaylistData().then((data) => {
-            [trackUriToPlaylistData, contents] = data;
+            trackUriToPlaylistData = data;
             playlistUpdated = true;
             updateTracklist();
         });
@@ -186,7 +142,7 @@ async function main() {
     const iconHTML = `<svg data-encore-id="icon" role="img" viewBox="0 0 16 16" class="Svg-img-icon-small">${Spicetify.SVGIcons["spotify"]}</svg>`;
     const showAllPlaylistsButton = new Spicetify.Playbar.Button("Show All Saved Playlists", iconHTML, handleButtonClick, false, showAllPlaylists);
 
-    [trackUriToPlaylistData, contents] = await getTrackUriToPlaylistData();
+    trackUriToPlaylistData = await getTrackUriToPlaylistData();
 
     mainElementObserver = new MutationObserver(() => {
         updateTracklist();

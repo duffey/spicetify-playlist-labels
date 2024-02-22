@@ -39,5 +39,5 @@ export async function getTrackUriToPlaylistData() {
             }
         });
     });
-    return [trackUriToPlaylistData, contents];
+    return trackUriToPlaylistData;
 }
