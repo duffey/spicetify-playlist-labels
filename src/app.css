@@ -32,7 +32,7 @@
     [index] var(--tracklist-index-column-width, 16px)
     [first] minmax(120px, var(--col1, 4fr))
     [var1] minmax(120px, var(--col2, 2fr))
-    [last] minmax(var(--spicetify-playlist-labels-column-width), var(--col2, 1fr))
+    [last] minmax(var(--spicetify-playlist-labels-column-width), var(--col2, 1fr)) !important;
 }
 
 .main-trackList-trackList.main-trackList-indexable[aria-colcount="5"] .main-trackList-trackListRowGrid {
