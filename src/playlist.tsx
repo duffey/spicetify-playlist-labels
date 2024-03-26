@@ -1,4 +1,4 @@
-import { getContents, getPlaylistItems } from "./api";
+import { getContents, getLikedTracks, getPlaylistItems } from "./api";
 
 export function getAllPlaylists(contents) {
     let playlists = [];
@@ -21,6 +21,7 @@ export async function getTrackUriToPlaylistData() {
     const playlists = getAllPlaylists(contents);
     const playlistItems = await Promise.all(playlists.map((playlist) => getPlaylistItems(playlist.uri)));
     const trackUriToPlaylistData = {};
+    const likedTracks = await getLikedTracks();
 
     playlistItems.forEach((playlistItems, index) => {
         playlistItems.forEach((playlistItem) => {
@@ -34,10 +35,29 @@ export async function getTrackUriToPlaylistData() {
                     name: playlists[index].name,
                     trackUid: playlistItem.uid,
                     image: playlists[index].images[0]?.url || '',
-                    isOwnPlaylist: playlists[index].isOwnedBySelf
+                    isOwnPlaylist: playlists[index].isOwnedBySelf,
+                    isLikedTracks: false
                 });
             }
         });
     });
+
+    likedTracks.items.forEach((item) => {
+        const trackUri = item.uri;
+        if (!trackUriToPlaylistData[trackUri]) {
+            trackUriToPlaylistData[trackUri] = [];
+        }
+        if (!trackUriToPlaylistData[trackUri].some(obj => obj.isLikedTracks)) {
+            trackUriToPlaylistData[trackUri].push({
+                uri: null,
+                name: 'Liked Songs',
+                trackUid: item.uid,
+                image: 'https://misc.scdn.co/liked-songs/liked-songs-300.png',
+                isOwnPlaylist: true,
+                isLikedTracks: true
+            });
+        }
+    });
+
     return trackUriToPlaylistData;
 }

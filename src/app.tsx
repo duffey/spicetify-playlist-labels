@@ -65,8 +65,12 @@ function updateTracklist() {
                             trackUriToPlaylistData[trackUri]?.map((playlistData) => {
                                 if (!showAllPlaylists && !playlistData.isOwnPlaylist) return null;
 
-                                const playlistId = playlistUriToPlaylistId(playlistData.uri);
-                                if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return null;
+                                if (!playlistData.isLikedTracks) {
+                                    const playlistId = playlistUriToPlaylistId(playlistData.uri);
+                                    if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return null;
+                                } else if (Spicetify.Platform.History.location.pathname === '/collection/tracks') {
+                                    return null;
+                                }
 
                                 return (
                                     <Spicetify.ReactComponent.TooltipWrapper
@@ -74,7 +78,7 @@ function updateTracklist() {
                                         placement="top"
                                     >
                                         <div>
-                                            <Spicetify.ReactComponent.RightClickMenu placement="bottom-end" menu={
+                                            <Spicetify.ReactComponent.RightClickMenu placement="bottom-end" menu={ playlistData.isLikedTracks ? null :
                                                 <Spicetify.ReactComponent.Menu>
                                                     <Spicetify.ReactComponent.MenuItem leadingIcon={
                                                         <Spicetify.ReactComponent.IconComponent
@@ -85,8 +89,8 @@ function updateTracklist() {
                                                     } onClick={
                                                         (e: Event) => {
                                                             e.stopPropagation();
-                                                            removeTrackFromPlaylist(playlistData.uri, trackUri)
-                                                            trackUriToPlaylistData[trackUri] = trackUriToPlaylistData[trackUri].filter((otherPlaylistData) => otherPlaylistData.name !== playlistData.name);
+                                                            removeTrackFromPlaylist(playlistData.uri, trackUri);
+                                                            trackUriToPlaylistData[trackUri] = trackUriToPlaylistData[trackUri].filter((otherPlaylistData) => otherPlaylistData.uri !== playlistData.uri);
                                                             playlistUpdated = true;
                                                             updateTracklist();
                                                         }
@@ -97,7 +101,7 @@ function updateTracklist() {
                                                     cursor: 'pointer',
                                                 }} onClick={(e: Event) => {
                                                     e.stopPropagation();
-                                                    const path = Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
+                                                    const path = playlistData.isLikedTracks ? '/collection/tracks' : Spicetify.URI.fromString(playlistData.uri)?.toURLPath(true);
                                                     highlightTrack = trackUri;
                                                     highlightTrackPath = path;
                                                     if (path) Spicetify.Platform.History.push({

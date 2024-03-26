@@ -10,3 +10,7 @@ export async function getPlaylistItems(uri) {
 export async function removeTrackFromPlaylist(playlistUri, trackUri) {
     await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [{ uri: trackUri, uid: "" }]);
 }
+
+export async function getLikedTracks() {
+    return await Spicetify.Platform.LibraryAPI.getTracks({ limit: Number.MAX_SAFE_INTEGER });
+}
