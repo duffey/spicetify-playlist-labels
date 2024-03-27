@@ -150,12 +150,20 @@ async function main() {
 
     showAllPlaylists = await JSON.parse(localStorage.getItem('spicetify-playlist-labels:show-all') || 'false');
 
-    await Spicetify.Platform.RootlistAPI._events._emitter.addListener('update', () => {
+    const getDataAndUpdateTracklist = () => {
         getTrackUriToPlaylistData().then((data) => {
             trackUriToPlaylistData = data;
             playlistUpdated = true;
             updateTracklist();
         });
+    }
+
+    await Spicetify.Platform.RootlistAPI.getEvents().addListener('update', () => {
+        getDataAndUpdateTracklist();
+    });
+
+    await Spicetify.Platform.LibraryAPI.getEvents().addListener('update', () => {
+        getDataAndUpdateTracklist();
     });
 
     const handleButtonClick = (buttonElement: Spicetify.Playbar.Button) => {
