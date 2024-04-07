@@ -78,7 +78,7 @@ function updateTracklist() {
                                         placement="top"
                                     >
                                         <div>
-                                            <Spicetify.ReactComponent.RightClickMenu placement="bottom-end" menu={ playlistData.isLikedTracks ? null :
+                                            <Spicetify.ReactComponent.RightClickMenu placement="bottom-end" menu={playlistData.isLikedTracks ? null :
                                                 <Spicetify.ReactComponent.Menu>
                                                     <Spicetify.ReactComponent.MenuItem leadingIcon={
                                                         <Spicetify.ReactComponent.IconComponent
@@ -150,20 +150,20 @@ async function main() {
 
     showAllPlaylists = await JSON.parse(localStorage.getItem('spicetify-playlist-labels:show-all') || 'false');
 
-    const getDataAndUpdateTracklist = () => {
-        getTrackUriToPlaylistData().then((data) => {
+    const getDataAndUpdateTracklist = (invalidatePlaylistUri = null) => {
+        getTrackUriToPlaylistData(invalidatePlaylistUri).then((data) => {
             trackUriToPlaylistData = data;
             playlistUpdated = true;
             updateTracklist();
         });
     }
 
-    await Spicetify.Platform.RootlistAPI.getEvents().addListener('update', () => {
+    await Spicetify.Platform.LibraryAPI.getEvents().addListener('update', (event) => {
         getDataAndUpdateTracklist();
     });
 
-    await Spicetify.Platform.LibraryAPI.getEvents().addListener('update', () => {
-        getDataAndUpdateTracklist();
+    await Spicetify.Platform.PlaylistAPI.getEvents().addListener('operation_complete', (event) => {
+        getDataAndUpdateTracklist(event.data.uri)
     });
 
     const handleButtonClick = (buttonElement: Spicetify.Playbar.Button) => {
