@@ -7,19 +7,19 @@ export function getUriToPlaylists(playlists) {
 }
 
 export async function getTrackUriToPlaylistData(invalidatePlaylistUri = null) {
+    const cachedUriToPlaylistItems = JSON.parse(localStorage.getItem('spicetify-playlist-labels:uri-to-playlist-items') || '{}');
+
     // Find which playlists have been updated based on their snapshot_id
     const cachedUriToPlaylists = JSON.parse(localStorage.getItem('spicetify-playlist-labels:uri-to-playlists') || '{}');
     const playlists = await getPlaylists();
     const uriToPlaylists = getUriToPlaylists(playlists);
-    localStorage.setItem('spicetify-playlist-labels:uri-to-playlists', JSON.stringify(uriToPlaylists));
     const updatedPlaylistUris = [];
     Object.entries(uriToPlaylists).forEach(([uri, playlist]) => {
-        if (!cachedUriToPlaylists[uri] || playlist.snapshot_id != cachedUriToPlaylists[uri].snapshot_id || uri == invalidatePlaylistUri)
+        if (!cachedUriToPlaylistItems[uri] || !cachedUriToPlaylists[uri] || playlist.snapshot_id != cachedUriToPlaylists[uri].snapshot_id || uri == invalidatePlaylistUri)
             updatedPlaylistUris.push(uri);
     });
 
     // Get only playlist items for updated playlists
-    const cachedUriToPlaylistItems = JSON.parse(localStorage.getItem('spicetify-playlist-labels:uri-to-playlist-items') || '{}');
     const updatedPlaylistItems = await Promise.all(updatedPlaylistUris.map((uri) => getPlaylistItems(uri)));
     const uriToUpdatedPlaylistItems = {}
     updatedPlaylistItems.forEach((playlistItems, index) => {
@@ -36,16 +36,13 @@ export async function getTrackUriToPlaylistData(invalidatePlaylistUri = null) {
         else
             uriToPlaylistItems[uri] = cachedUriToPlaylistItems[uri]
     });
-    localStorage.setItem('spicetify-playlist-labels:uri-to-playlist-items', JSON.stringify(uriToPlaylistItems));
 
     // Get liked tracks if the number has changed otherwise get them from local storage
     let likedTracks = JSON.parse(localStorage.getItem('spicetify-playlist-labels:liked-tracks') || '{}');
     const cachedLikedTracksCount = JSON.parse(localStorage.getItem('spicetify-playlist-labels:liked-tracks-count') || '0');
     const likedTracksCount = await getLikedTracksCount();
-    localStorage.setItem('spicetify-playlist-labels:liked-tracks-count', JSON.stringify(likedTracksCount));
     if (cachedLikedTracksCount != likedTracksCount)
         likedTracks = await getLikedTracks();
-    localStorage.setItem('spicetify-playlist-labels:liked-tracks', JSON.stringify(likedTracks));
 
     const trackUriToPlaylistData = {};
 
@@ -84,6 +81,11 @@ export async function getTrackUriToPlaylistData(invalidatePlaylistUri = null) {
             });
         }
     });
+
+    localStorage.setItem('spicetify-playlist-labels:uri-to-playlists', JSON.stringify(uriToPlaylists));
+    localStorage.setItem('spicetify-playlist-labels:uri-to-playlist-items', JSON.stringify(uriToPlaylistItems));
+    localStorage.setItem('spicetify-playlist-labels:liked-tracks-count', JSON.stringify(likedTracksCount));
+    localStorage.setItem('spicetify-playlist-labels:liked-tracks', JSON.stringify(likedTracks));
 
     return trackUriToPlaylistData;
 }
