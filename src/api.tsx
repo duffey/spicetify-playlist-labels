@@ -18,11 +18,9 @@ export async function getLikedTracksCount() {
 export async function getPlaylists() {
     let items = []
     let playlists = null;
-    url = "https://api.spotify.com/v1/me/playlists"
-    while (url) {
-        playlists = await Spicetify.CosmosAsync.get(url);
+    do {
+        playlists = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/me/playlists");
         items = items.concat(playlists.items);
-        url = playlists.next;
-    }
+    } while (playlists.next);
     return items;
 }
