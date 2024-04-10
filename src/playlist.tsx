@@ -1,67 +1,41 @@
-import { getPlaylists, getLikedTracks, getLikedTracksCount, getPlaylistItems } from "./api";
+import { getContents, getLikedTracks, getPlaylistItems } from "./api";
 
-export function getUriToPlaylists(playlists) {
-    uriToPlaylists = {};
-    playlists.forEach((playlist) => uriToPlaylists[playlist.uri] = playlist);
-    return uriToPlaylists;
+export function getAllPlaylists(contents) {
+    let playlists = [];
+
+    function traverse(item) {
+        if (item.type === 'playlist') {
+            playlists.push(item);
+        } else if (item.type === 'folder' && item.items) {
+            item.items.forEach(i => traverse(i));
+        }
+    }
+
+    traverse(contents);
+
+    return playlists;
 }
 
-export async function getTrackUriToPlaylistData(invalidatePlaylistUri = null) {
-    // Find which playlists have been updated based on their snapshot_id
-    const cachedUriToPlaylists = JSON.parse(localStorage.getItem('spicetify-playlist-labels:uri-to-playlists') || '{}');
-    const playlists = await getPlaylists();
-    const uriToPlaylists = getUriToPlaylists(playlists);
-    localStorage.setItem('spicetify-playlist-labels:uri-to-playlists', JSON.stringify(uriToPlaylists));
-    const updatedPlaylistUris = [];
-    Object.entries(uriToPlaylists).forEach(([uri, playlist]) => {
-        if (!cachedUriToPlaylists[uri] || playlist.snapshot_id != cachedUriToPlaylists[uri].snapshot_id || uri == invalidatePlaylistUri)
-            updatedPlaylistUris.push(uri);
-    });
-
-    // Get only playlist items for updated playlists
-    const cachedUriToPlaylistItems = JSON.parse(localStorage.getItem('spicetify-playlist-labels:uri-to-playlist-items') || '{}');
-    const updatedPlaylistItems = await Promise.all(updatedPlaylistUris.map((uri) => getPlaylistItems(uri)));
-    const uriToUpdatedPlaylistItems = {}
-    updatedPlaylistItems.forEach((playlistItems, index) => {
-        const uri = updatedPlaylistUris[index];
-        uriToUpdatedPlaylistItems[uri] = playlistItems;
-    });
-
-    // Merge the updated playlist items with the cached playlist items
-    const uriToPlaylistItems = {};
-    playlists.forEach((playlist) => {
-        const uri = playlist.uri;
-        if (uriToUpdatedPlaylistItems[uri])
-            uriToPlaylistItems[uri] = uriToUpdatedPlaylistItems[uri];
-        else
-            uriToPlaylistItems[uri] = cachedUriToPlaylistItems[uri]
-    });
-    localStorage.setItem('spicetify-playlist-labels:uri-to-playlist-items', JSON.stringify(uriToPlaylistItems));
-
-    // Get liked tracks if the number has changed otherwise get them from local storage
-    let likedTracks = JSON.parse(localStorage.getItem('spicetify-playlist-labels:liked-tracks') || '{}');
-    const cachedLikedTracksCount = JSON.parse(localStorage.getItem('spicetify-playlist-labels:liked-tracks-count') || '0');
-    const likedTracksCount = await getLikedTracksCount();
-    localStorage.setItem('spicetify-playlist-labels:liked-tracks-count', JSON.stringify(likedTracksCount));
-    if (cachedLikedTracksCount != likedTracksCount)
-        likedTracks = await getLikedTracks();
-    localStorage.setItem('spicetify-playlist-labels:liked-tracks', JSON.stringify(likedTracks));
-
+export async function getTrackUriToPlaylistData() {
+    const contents = await getContents();
+    const playlists = getAllPlaylists(contents);
+    const playlistItems = await Promise.all(playlists.map((playlist) => getPlaylistItems(playlist.uri)));
     const trackUriToPlaylistData = {};
+    const likedTracks = await getLikedTracks();
 
-    Object.entries(uriToPlaylistItems).forEach(([uri, playlistItems]) => {
+    playlistItems.forEach((playlistItems, index) => {
         playlistItems.forEach((playlistItem) => {
             const trackUri = playlistItem.uri;
             if (!trackUriToPlaylistData[trackUri]) {
                 trackUriToPlaylistData[trackUri] = [];
             }
-            if (!trackUriToPlaylistData[trackUri].some(obj => obj.uri === uri)) {
+            if (!trackUriToPlaylistData[trackUri].some(obj => obj.uri === playlists[index].uri)) {
                 trackUriToPlaylistData[trackUri].push({
-                    uri: uri,
-                    name: uriToPlaylists[uri].name,
+                    uri: playlists[index].uri,
+                    name: playlists[index].name,
                     trackUid: playlistItem.uid,
-                    image: uriToPlaylists[uri].images[0]?.url || '',
-                    isOwnPlaylist: Spicetify.Platform.initialUser.uri == uriToPlaylists[uri].owner.uri,
+                    image: playlists[index].images[0]?.url || '',
+                    isOwnPlaylist: playlists[index].isOwnedBySelf,
                     isLikedTracks: false
                 });
             }
