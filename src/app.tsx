@@ -14,6 +14,7 @@ let playlistUpdated = false;
 let showAllPlaylists = false;
 let highlightTrack = null;
 let highlightTrackPath = null;
+let maxLabelCount = 0;
 
 function playlistUriToPlaylistId(uri) {
     return uri.match(/spotify:playlist:(.*)/)[1];
@@ -35,6 +36,10 @@ function updateTracklist() {
     oldTracklists = tracklists;
     tracklists = Array.from(document.querySelectorAll(".main-trackList-indexable"));
 
+    if (oldTracklists.length !== tracklists.length || !oldTracklists.every((value, index) => value === tracklists[index])) {
+        maxLabelCount = 0;
+    }
+
     for (const tracklist of tracklists) {
         const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
         for (const track of tracks) {
@@ -42,6 +47,11 @@ function updateTracklist() {
             if (highlightTrack === trackUri && Spicetify.Platform.History.location.pathname === highlightTrackPath) {
                 track.click();
                 highlightTrack = null;
+            }
+
+            if (trackUriToPlaylistData[trackUri]?.length > maxLabelCount) {
+                maxLabelCount = trackUriToPlaylistData[trackUri]?.length;
+                document.documentElement.style.setProperty('--spicetify-playlist-labels-label-count', `${maxLabelCount}`);
             }
 
             let labelContainer = track.querySelector(".spicetify-playlist-labels");
