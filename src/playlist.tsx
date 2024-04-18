@@ -1,6 +1,6 @@
-import { getContents, getLikedTracks, getPlaylistItems } from "./api";
+import { getContents, getLikedTracks, getLikedTracksCount, getPlaylists, getPlaylistItems } from "./api";
 
-export function getAllPlaylists(contents) {
+function getPlaylistsFromContents(contents) {
     let playlists = [];
     let ratedPlaylists = [];
 
@@ -20,43 +20,218 @@ export function getAllPlaylists(contents) {
     return [playlists, ratedPlaylists];
 }
 
-export async function getTrackUriToPlaylistData() {
-    const contents = await getContents();
-    const [playlists, ratedPlaylists] = getAllPlaylists(contents);
-    const allPlaylistItems = await Promise.all([...playlists, ...ratedPlaylists].map((playlist) => getPlaylistItems(playlist.uri)));
-    const playlistItems = allPlaylistItems.slice(0, playlists.length);
-    const ratedPlaylistItems = allPlaylistItems.slice(playlists.length)
-    const trackUriToPlaylistData = {};
-    const likedTracks = await getLikedTracks();
+function getUriToSnapshotId(playlists) {
+    return playlists.reduce((acc, playlist) => {
+        acc[playlist.uri] = playlist.snapshot_id;
+        return acc;
+    }, {});
+}
 
-    function addPlaylists(playlists, playlistItems) {
-        playlistItems.forEach((playlistItems, index) => {
-            playlistItems.forEach((playlistItem) => {
-                const trackUri = playlistItem.uri;
-                if (!trackUriToPlaylistData[trackUri]) {
-                    trackUriToPlaylistData[trackUri] = [];
-                }
-                if (!trackUriToPlaylistData[trackUri].some(obj => obj.uri === playlists[index].uri)) {
-                    trackUriToPlaylistData[trackUri].push({
-                        uri: playlists[index].uri,
-                        name: playlists[index].name,
-                        trackUid: playlistItem.uid,
-                        image: playlists[index].images[0]?.url || '',
-                        isOwnPlaylist: playlists[index].isOwnedBySelf,
-                        isLikedTracks: false
-                    });
-                }
-            });
+async function getPlaylistsExtra() {
+    const contents = await getContents();
+
+    const [playlists, ratedPlaylists] = getPlaylistsFromContents(contents);
+
+    const playlistsWithSnapshotId = await getPlaylists();
+    const uriToSnapshotId = getUriToSnapshotId(playlistsWithSnapshotId);
+
+    let allPlaylists = [...playlists, ...ratedPlaylists];
+    allPlaylists = allPlaylists.map((playlist) => ({
+        ...playlist,
+        snapshotId: uriToSnapshotId[playlist.uri],
+        isRatedPlaylist: ratedPlaylists.some((ratedPlaylist) => ratedPlaylist.uri === playlist.uri)
+    }));
+
+    return allPlaylists;
+}
+
+async function getDb(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open("spicetify-playlist-labels", 1);
+
+        request.onerror = (event) => {
+            reject(event);
+        };
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+
+            db.createObjectStore("playlists", { keyPath: "uri" });
+            db.createObjectStore("playlistItems", { keyPath: "uri" });
+        };
+        request.onsuccess = (event) => {
+            resolve(event.target.result);
+        };
+    });
+}
+
+async function getCachedPlaylists(db: IDBDatabase): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+        const playlistObjectStoreRequest = db.transaction("playlists")
+            .objectStore("playlists")
+            .getAll();
+        playlistObjectStoreRequest.onsuccess = (event) => {
+            resolve(playlistObjectStoreRequest.result);
+        };
+        playlistObjectStoreRequest.onerror = (event) => {
+            reject(event);
+        };
+    });
+}
+
+async function getCachedPlaylistItems(db: IDBDatabase): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+        const playlistItemsObjectStoreRequest = db.transaction("playlistItems")
+            .objectStore("playlistItems")
+            .getAll();
+        playlistItemsObjectStoreRequest.onsuccess = (event) => {
+            resolve(playlistItemsObjectStoreRequest.result);
+        };
+        playlistItemsObjectStoreRequest.onerror = (event) => {
+            reject(event);
+        };
+    });
+}
+
+async function clearCachedPlaylists(db: IDBDatabase): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const playlistObjectStoreRequest = db.transaction("playlists", "readwrite")
+            .objectStore("playlists")
+            .clear();
+        playlistObjectStoreRequest.onsuccess = (event) => {
+            resolve();
+        };
+        playlistObjectStoreRequest.onerror = (event) => {
+            reject(event);
+        };
+    });
+}
+
+async function clearCachedPlaylistItems(db: IDBDatabase): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const playlistItemsObjectStoreRequest = db.transaction("playlistItems", "readwrite")
+            .objectStore("playlistItems")
+            .clear();
+        playlistItemsObjectStoreRequest.onsuccess = (event) => {
+            resolve();
+        };
+        playlistItemsObjectStoreRequest.onerror = (event) => {
+            reject(event);
+        };
+    });
+}
+
+async function cachePlaylists(db: IDBDatabase, playlists: any[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const playlistObjectStore = db.transaction("playlists", "readwrite")
+            .objectStore("playlists");
+
+        playlists.forEach((playlist) => {
+            playlistObjectStore.put(playlist);
         });
+
+        playlistObjectStore.transaction.oncomplete = (event) => {
+            resolve();
+        };
+        playlistObjectStore.transaction.onerror = (event) => {
+            reject(event);
+        };
+    });
+}
+
+async function cachePlaylistItems(db: IDBDatabase, uriToPlaylistItems): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const playlistItemsObjectStore = db.transaction("playlistItems", "readwrite")
+            .objectStore("playlistItems");
+
+        Object.entries(uriToPlaylistItems).forEach(([uri, items]) => {
+            playlistItemsObjectStore.put({ uri, items });
+        });
+
+        playlistItemsObjectStore.transaction.oncomplete = (event) => {
+            resolve();
+        };
+        playlistItemsObjectStore.transaction.onerror = (event) => {
+            reject(event);
+        };
+    });
+}
+
+function addPlaylists(trackUriToPlaylistData, playlists: any[], uriToPlaylistItems: any) {
+    playlists.forEach((playlist) => {
+        const playlistItems = uriToPlaylistItems[playlist.uri];
+        playlistItems.forEach((playlistItem) => {
+            const trackUri = playlistItem.uri;
+            if (!trackUriToPlaylistData[trackUri])
+                trackUriToPlaylistData[trackUri] = [];
+            if (!trackUriToPlaylistData[trackUri].some(obj => obj.uri === playlist.uri)) {
+                trackUriToPlaylistData[trackUri].push({
+                    uri: playlist.uri,
+                    name: playlist.name,
+                    trackUid: playlistItem.uid,
+                    image: playlist.images[0]?.url || '',
+                    isOwnPlaylist: playlist.isOwnedBySelf,
+                    isLikedTracks: false
+                });
+            }
+        });
+    });
+}
+
+export async function getTrackUriToPlaylistData() {
+    const db = await getDb();
+    const cachedPlaylists = await getCachedPlaylists(db);
+    const cachedPlaylistItems = await getCachedPlaylistItems(db);
+
+    const playlists = await getPlaylistsExtra();
+    const updatedPlaylists = [];
+    playlists.forEach((playlist) => {
+        const cachedPlaylist = cachedPlaylists.find((cachedPlaylist) => cachedPlaylist.uri === playlist.uri);
+        if (!cachedPlaylist || cachedPlaylist.snapshotId !== playlist.snapshotId) {
+            updatedPlaylists.push(playlist);
+        }
+    });
+
+    const cachedUriToPlaylistItems = [];
+    cachedPlaylistItems.forEach((playlistItems) => {
+        cachedUriToPlaylistItems[playlistItems.uri] = playlistItems.items;
+    });
+
+    const updatedPlaylistItems = await Promise.all(updatedPlaylists.map((playlist) => getPlaylistItems(playlist.uri)));
+    const uriToUpdatedPlaylistItems = {}
+    updatedPlaylistItems.forEach((playlistItems, index) => {
+        const uri = updatedPlaylists[index].uri;
+        uriToUpdatedPlaylistItems[uri] = playlistItems;
+    });
+
+    const uriToPlaylistItems = {};
+    playlists.forEach((playlist) => {
+        const uri = playlist.uri;
+        if (uriToUpdatedPlaylistItems[uri])
+            uriToPlaylistItems[uri] = uriToUpdatedPlaylistItems[uri];
+        else
+            uriToPlaylistItems[uri] = cachedUriToPlaylistItems[uri]
+    });
+    uriToPlaylistItems['likedTracks'] = cachedUriToPlaylistItems['likedTracks'];
+
+    const cachedLikedTracksCount = JSON.parse(localStorage.getItem('spicetify-playlist-labels:liked-tracks-count') || '0');
+    const likedTracksCount = await getLikedTracksCount();
+    let likedTracks = uriToPlaylistItems['likedTracks'];
+    if (!likedTracks || cachedLikedTracksCount != likedTracksCount) {
+        likedTracks = await getLikedTracks();
+        likedTracks = likedTracks.items;
+        uriToPlaylistItems['likedTracks'] = likedTracks;
     }
 
-    addPlaylists(playlists, playlistItems);
+    const trackUriToPlaylistData = {};
+    const ratedPlaylists = playlists.filter((playlist) => playlist.isRatedPlaylist);
+    const nonRatedPlaylists = playlists.filter((playlist) => !playlist.isRatedPlaylist);
 
-    likedTracks.items.forEach((item) => {
+    addPlaylists(trackUriToPlaylistData, nonRatedPlaylists, uriToPlaylistItems);
+
+    likedTracks.forEach((item) => {
         const trackUri = item.uri;
-        if (!trackUriToPlaylistData[trackUri]) {
+        if (!trackUriToPlaylistData[trackUri])
             trackUriToPlaylistData[trackUri] = [];
-        }
         if (!trackUriToPlaylistData[trackUri].some(obj => obj.isLikedTracks)) {
             trackUriToPlaylistData[trackUri].push({
                 uri: null,
@@ -69,7 +244,13 @@ export async function getTrackUriToPlaylistData() {
         }
     });
 
-    addPlaylists(ratedPlaylists, ratedPlaylistItems);
+    addPlaylists(trackUriToPlaylistData, ratedPlaylists, uriToPlaylistItems);
+
+    await clearCachedPlaylists(db);
+    await clearCachedPlaylistItems(db);
+    await cachePlaylists(db, playlists);
+    await cachePlaylistItems(db, uriToPlaylistItems);
+    localStorage.setItem('spicetify-playlist-labels:liked-tracks-count', likedTracksCount);
 
     return trackUriToPlaylistData;
 }
