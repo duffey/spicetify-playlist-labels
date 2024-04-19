@@ -14,7 +14,10 @@ let playlistUpdated = false;
 let showAllPlaylists = false;
 let highlightTrack = null;
 let highlightTrackPath = null;
-let maxLabelCount = 0;
+let maxExistingLabelCount = 0;
+let maxLabelCount = 1;
+let rowHeight = '56px';
+let mainView = null;
 
 function playlistUriToPlaylistId(uri) {
     return uri.match(/spotify:playlist:(.*)/)[1];
@@ -32,26 +35,85 @@ function getTracklistTrackUri(tracklistElement) {
     );
 }
 
+function calculateMaxLabelCount() {
+    if (!mainView) return;
+
+    let newMaxLabelCount = maxLabelCount;
+    let space = rowHeight == '56px' ? 44 : 32;
+    let maxPossibleLabelCount = 20;
+    const minViewSize = 516;
+    const contentRect = mainView.getBoundingClientRect();
+
+    let min = 0;
+    let max = minViewSize;
+    if (min <= contentRect.width && contentRect.width <= max) {
+        newMaxLabelCount = 1;
+    }
+
+    for (let i = 1; i < maxPossibleLabelCount - 1; i++) {
+        min = minViewSize + 1 + space * (i - 1);
+        max = minViewSize + 1 + space * i;
+        if (min <= contentRect.width && contentRect.width <= max) {
+            newMaxLabelCount = i + 1;
+        }
+    }
+
+    min = minViewSize + 1 + space * (maxPossibleLabelCount - 2);
+    if (min <= contentRect.width) {
+        newMaxLabelCount = maxPossibleLabelCount;
+    }
+
+
+    if (newMaxLabelCount !== maxLabelCount) {
+        maxLabelCount = newMaxLabelCount;
+        document.documentElement.style.setProperty('--spicetify-playlist-labels-max-label-count', `${maxLabelCount}`);
+        playlistUpdated = true;
+        updateTracklist();
+    }
+}
+
 function updateTracklist() {
     oldTracklists = tracklists;
     tracklists = Array.from(document.querySelectorAll(".main-trackList-indexable"));
 
     if (oldTracklists.length !== tracklists.length || !oldTracklists.every((value, index) => value === tracklists[index])) {
-        maxLabelCount = 0;
+        maxExistingLabelCount = 0;
     }
 
     for (const tracklist of tracklists) {
         const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
         for (const track of tracks) {
+            const trackStyle = getComputedStyle(track);
+            const trackRowHeight = trackStyle.getPropertyValue('--row-height');
+            if (trackRowHeight != rowHeight) {
+                rowHeight = trackRowHeight;
+                document.documentElement.style.setProperty('--spicetify-playlist-labels-size', `calc(${rowHeight} * 0.5)`);
+                calculateMaxLabelCount();
+                playlistUpdated = true;
+            }
+
             const trackUri = getTracklistTrackUri(track);
             if (highlightTrack === trackUri && Spicetify.Platform.History.location.pathname === highlightTrackPath) {
                 track.click();
                 highlightTrack = null;
             }
 
-            if (trackUriToPlaylistData[trackUri]?.length > maxLabelCount) {
-                maxLabelCount = trackUriToPlaylistData[trackUri]?.length;
-                document.documentElement.style.setProperty('--spicetify-playlist-labels-label-count', `${maxLabelCount}`);
+            let filteredPlaylistData = (trackUriToPlaylistData[trackUri] ?? []).filter((playlistData) => {
+                if (!showAllPlaylists && !playlistData.isOwnPlaylist) return false;
+
+                if (!playlistData.isLikedTracks) {
+                    const playlistId = playlistUriToPlaylistId(playlistData.uri);
+                    if (Spicetify.Platform.History.location.pathname === `/playlist/${playlistId}`) return false;
+                } else if (Spicetify.Platform.History.location.pathname === '/collection/tracks') {
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (filteredPlaylistData.length > maxExistingLabelCount) {
+                maxExistingLabelCount = filteredPlaylistData.length;
+                document.documentElement.style.setProperty('--spicetify-playlist-labels-label-count', `${maxExistingLabelCount}`);
             }
 
             let labelContainer = track.querySelector(".spicetify-playlist-labels");
@@ -69,10 +131,18 @@ function updateTracklist() {
                 labelContainer = document.createElement("div");
                 labelContainer.classList.add("spicetify-playlist-labels");
 
+                let containerClassName = 'spicetify-playlist-labels-labels-container';
+
+                if (filteredPlaylistData.length > maxLabelCount) {
+                    containerClassName += ' spicetify-playlist-labels-overflow';
+                }
+
+                filteredPlaylistData = filteredPlaylistData.slice(0, maxLabelCount)
+
                 ReactDOM.render(
-                    <div className="spicetify-playlist-labels-labels-container">
+                    <div className={containerClassName}>
                         {
-                            trackUriToPlaylistData[trackUri]?.map((playlistData) => {
+                            filteredPlaylistData.map((playlistData) => {
                                 if (!showAllPlaylists && !playlistData.isOwnPlaylist) return null;
 
                                 if (!playlistData.isLikedTracks) {
@@ -158,22 +228,24 @@ async function main() {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    mainView = document.querySelector('.Root__main-view');
+
     showAllPlaylists = await JSON.parse(localStorage.getItem('spicetify-playlist-labels:show-all') || 'false');
 
-    const getDataAndUpdateTracklist = () => {
-        getTrackUriToPlaylistData().then((data) => {
+    const getDataAndUpdateTracklist = (updatePlaylistUri = null) => {
+        getTrackUriToPlaylistData(updatePlaylistUri).then((data) => {
             trackUriToPlaylistData = data;
             playlistUpdated = true;
             updateTracklist();
         });
     }
 
-    await Spicetify.Platform.RootlistAPI.getEvents().addListener('update', () => {
+    await Spicetify.Platform.LibraryAPI.getEvents().addListener('update', (event) => {
         getDataAndUpdateTracklist();
     });
 
-    await Spicetify.Platform.LibraryAPI.getEvents().addListener('update', () => {
-        getDataAndUpdateTracklist();
+    await Spicetify.Platform.PlaylistAPI.getEvents().addListener('operation_complete', (event) => {
+        getDataAndUpdateTracklist(event.data.uri)
     });
 
     const handleButtonClick = (buttonElement: Spicetify.Playbar.Button) => {
@@ -201,6 +273,12 @@ async function main() {
         childList: true,
         subtree: true,
     });
+
+    const resizeObserver = new ResizeObserver(entries => {
+        calculateMaxLabelCount();
+    });
+
+    resizeObserver.observe(mainView);
 }
 
 export default main;

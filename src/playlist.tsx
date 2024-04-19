@@ -177,7 +177,7 @@ function addPlaylists(trackUriToPlaylistData, playlists: any[], uriToPlaylistIte
     });
 }
 
-export async function getTrackUriToPlaylistData() {
+export async function getTrackUriToPlaylistData(updatePlaylistUri) {
     const db = await getDb();
     const cachedPlaylists = await getCachedPlaylists(db);
     const cachedPlaylistItems = await getCachedPlaylistItems(db);
@@ -186,7 +186,7 @@ export async function getTrackUriToPlaylistData() {
     const updatedPlaylists = [];
     playlists.forEach((playlist) => {
         const cachedPlaylist = cachedPlaylists.find((cachedPlaylist) => cachedPlaylist.uri === playlist.uri);
-        if (!cachedPlaylist || cachedPlaylist.snapshotId !== playlist.snapshotId) {
+        if (!cachedPlaylist || cachedPlaylist.snapshotId !== playlist.snapshotId || playlist.uri == updatePlaylistUri) {
             updatedPlaylists.push(playlist);
         }
     });
@@ -226,7 +226,7 @@ export async function getTrackUriToPlaylistData() {
     const ratedPlaylists = playlists.filter((playlist) => playlist.isRatedPlaylist);
     const nonRatedPlaylists = playlists.filter((playlist) => !playlist.isRatedPlaylist);
 
-    addPlaylists(trackUriToPlaylistData, nonRatedPlaylists, uriToPlaylistItems);
+    addPlaylists(trackUriToPlaylistData, ratedPlaylists, uriToPlaylistItems);
 
     likedTracks.forEach((item) => {
         const trackUri = item.uri;
@@ -244,7 +244,7 @@ export async function getTrackUriToPlaylistData() {
         }
     });
 
-    addPlaylists(trackUriToPlaylistData, ratedPlaylists, uriToPlaylistItems);
+    addPlaylists(trackUriToPlaylistData, nonRatedPlaylists, uriToPlaylistItems);
 
     await clearCachedPlaylists(db);
     await clearCachedPlaylistItems(db);

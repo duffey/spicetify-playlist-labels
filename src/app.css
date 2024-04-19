@@ -1,7 +1,8 @@
 :root {
     --spicetify-playlist-labels-size: 28px;
     --spicetify-playlist-labels-gap: 6px;
-    --spicetify-playlist-labels-container-width: calc(var(--spicetify-playlist-labels-size) * var(--spicetify-playlist-labels-label-count, 3) + var(--spicetify-playlist-labels-gap) * calc(var(--spicetify-playlist-labels-label-count, 3) - 1));
+    --spicetify-playlist-labels-container-max-width: calc((var(--spicetify-playlist-labels-size) + var(--spicetify-playlist-labels-gap)) * var(--spicetify-playlist-labels-max-label-count, 1) + 16px);
+    --spicetify-playlist-labels-container-width: min(var(--spicetify-playlist-labels-container-max-width), calc(var(--spicetify-playlist-labels-size) * var(--spicetify-playlist-labels-label-count, 1) + var(--spicetify-playlist-labels-gap) * calc(var(--spicetify-playlist-labels-label-count, 1) - 1)));
 }
 
 .spicetify-playlist-labels-labels-container {
@@ -9,9 +10,21 @@
     height: var(--row-height);
     align-items: center;
     display: flex;
+    flex-direction: row-reverse;
     overflow: hidden;
     gap: var(--spicetify-playlist-labels-gap);
-    justify-content: flex-end;
+    justify-content: flex-start;
+    max-width: var(--spicetify-playlist-labels-container-max-width);
+}
+
+.spicetify-playlist-labels-labels-container:after {
+    content: '⋯';
+    display: none;
+    color: var(--text-base);
+}
+
+.spicetify-playlist-labels-labels-container.spicetify-playlist-labels-overflow:after {
+    display: block;
 }
 
 .spicetify-playlist-labels-label-container {
