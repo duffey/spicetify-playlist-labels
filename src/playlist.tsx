@@ -213,6 +213,10 @@ export async function updatePlaylistData(uri) {
     const nonRatedPlaylists = cachedPlaylists.filter((playlist) => !playlist.isRatedPlaylist);
     const likedTracks = cachedUriToPlaylistItems['likedTracks'];
 
+    const uriToPlaylistItems = {};
+    uriToPlaylistItems[uri] = updatedPlaylistItems;
+    await cachePlaylistItems(db, uriToPlaylistItems);
+
     addPlaylists(trackUriToPlaylistData, ratedPlaylists, cachedUriToPlaylistItems);
     addLikedTracks(trackUriToPlaylistData, likedTracks);
     addPlaylists(trackUriToPlaylistData, nonRatedPlaylists, cachedUriToPlaylistItems);

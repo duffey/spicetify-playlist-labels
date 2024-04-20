@@ -18,6 +18,7 @@ let maxExistingLabelCount = 0;
 let maxLabelCount = 1;
 let rowHeight = '56px';
 let mainView = null;
+let updatePromise = Promise.resolve();
 
 function playlistUriToPlaylistId(uri) {
     return uri.match(/spotify:playlist:(.*)/)[1];
@@ -241,11 +242,13 @@ async function main() {
     }
 
     await Spicetify.Platform.LibraryAPI.getEvents().addListener('update', (event) => {
-        getDataAndUpdateTracklist(updateLikedTracks());
+        updatePromise = updatePromise.then(() => { return updateLikedTracks() });
+        getDataAndUpdateTracklist(updatePromise);
     });
 
     await Spicetify.Platform.PlaylistAPI.getEvents().addListener('operation_complete', (event) => {
-        getDataAndUpdateTracklist(updatePlaylistData(event.data.uri))
+        updatePromise = updatePromise.then(() => { return updatePlaylistData(event.data.uri) });
+        getDataAndUpdateTracklist(updatePromise);
     });
 
     const handleButtonClick = (buttonElement: Spicetify.Playbar.Button) => {
