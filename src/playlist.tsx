@@ -177,7 +177,80 @@ function addPlaylists(trackUriToPlaylistData, playlists: any[], uriToPlaylistIte
     });
 }
 
-export async function getTrackUriToPlaylistData(updatePlaylistUri) {
+function addLikedTracks(trackUriToPlaylistData, likedTracks) {
+    likedTracks.forEach((item) => {
+        const trackUri = item.uri;
+        if (!trackUriToPlaylistData[trackUri])
+            trackUriToPlaylistData[trackUri] = [];
+        if (!trackUriToPlaylistData[trackUri].some(obj => obj.isLikedTracks)) {
+            trackUriToPlaylistData[trackUri].push({
+                uri: null,
+                name: 'Liked Songs',
+                trackUid: item.uid,
+                image: 'https://misc.scdn.co/liked-songs/liked-songs-300.png',
+                isOwnPlaylist: true,
+                isLikedTracks: true
+            });
+        }
+    });
+}
+
+export async function updatePlaylistData(uri) {
+    const db = await getDb();
+    const cachedPlaylists = await getCachedPlaylists(db);
+    const cachedPlaylistItems = await getCachedPlaylistItems(db);
+
+    const cachedUriToPlaylistItems = [];
+    cachedPlaylistItems.forEach((playlistItems) => {
+        cachedUriToPlaylistItems[playlistItems.uri] = playlistItems.items;
+    });
+
+    const updatedPlaylistItems = await getPlaylistItems(uri);
+    cachedUriToPlaylistItems[uri] = updatedPlaylistItems;
+
+    const trackUriToPlaylistData = {};
+    const ratedPlaylists = cachedPlaylists.filter((playlist) => playlist.isRatedPlaylist);
+    const nonRatedPlaylists = cachedPlaylists.filter((playlist) => !playlist.isRatedPlaylist);
+    const likedTracks = cachedUriToPlaylistItems['likedTracks'];
+
+    addPlaylists(trackUriToPlaylistData, ratedPlaylists, cachedUriToPlaylistItems);
+    addLikedTracks(trackUriToPlaylistData, likedTracks);
+    addPlaylists(trackUriToPlaylistData, nonRatedPlaylists, cachedUriToPlaylistItems);
+
+    return trackUriToPlaylistData;
+}
+
+export async function updateLikedTracks() {
+    const db = await getDb();
+    const cachedPlaylists = await getCachedPlaylists(db);
+    const cachedPlaylistItems = await getCachedPlaylistItems(db);
+
+    const cachedUriToPlaylistItems = [];
+    cachedPlaylistItems.forEach((playlistItems) => {
+        cachedUriToPlaylistItems[playlistItems.uri] = playlistItems.items;
+    });
+
+    const trackUriToPlaylistData = {};
+    const ratedPlaylists = cachedPlaylists.filter((playlist) => playlist.isRatedPlaylist);
+    const nonRatedPlaylists = cachedPlaylists.filter((playlist) => !playlist.isRatedPlaylist);
+
+    let likedTracks = await getLikedTracks();
+    likedTracks = likedTracks.items;
+
+    addPlaylists(trackUriToPlaylistData, ratedPlaylists, cachedUriToPlaylistItems);
+    addLikedTracks(trackUriToPlaylistData, likedTracks);
+    addPlaylists(trackUriToPlaylistData, nonRatedPlaylists, cachedUriToPlaylistItems);
+
+    const uriToPlaylistItems = {};
+    uriToPlaylistItems['likedTracks'] = likedTracks;
+    await cachePlaylistItems(db, uriToPlaylistItems);
+
+    localStorage.setItem('spicetify-playlist-labels:liked-tracks-count', `${likedTracks.length}`);
+
+    return trackUriToPlaylistData;
+}
+
+export async function getTrackUriToPlaylistData() {
     const db = await getDb();
     const cachedPlaylists = await getCachedPlaylists(db);
     const cachedPlaylistItems = await getCachedPlaylistItems(db);
@@ -186,7 +259,7 @@ export async function getTrackUriToPlaylistData(updatePlaylistUri) {
     const updatedPlaylists = [];
     playlists.forEach((playlist) => {
         const cachedPlaylist = cachedPlaylists.find((cachedPlaylist) => cachedPlaylist.uri === playlist.uri);
-        if (!cachedPlaylist || cachedPlaylist.snapshotId !== playlist.snapshotId || playlist.uri == updatePlaylistUri) {
+        if (!cachedPlaylist || cachedPlaylist.snapshotId !== playlist.snapshotId) {
             updatedPlaylists.push(playlist);
         }
     });
@@ -227,30 +300,14 @@ export async function getTrackUriToPlaylistData(updatePlaylistUri) {
     const nonRatedPlaylists = playlists.filter((playlist) => !playlist.isRatedPlaylist);
 
     addPlaylists(trackUriToPlaylistData, ratedPlaylists, uriToPlaylistItems);
-
-    likedTracks.forEach((item) => {
-        const trackUri = item.uri;
-        if (!trackUriToPlaylistData[trackUri])
-            trackUriToPlaylistData[trackUri] = [];
-        if (!trackUriToPlaylistData[trackUri].some(obj => obj.isLikedTracks)) {
-            trackUriToPlaylistData[trackUri].push({
-                uri: null,
-                name: 'Liked Songs',
-                trackUid: item.uid,
-                image: 'https://misc.scdn.co/liked-songs/liked-songs-300.png',
-                isOwnPlaylist: true,
-                isLikedTracks: true
-            });
-        }
-    });
-
+    addLikedTracks(trackUriToPlaylistData, likedTracks);
     addPlaylists(trackUriToPlaylistData, nonRatedPlaylists, uriToPlaylistItems);
 
     await clearCachedPlaylists(db);
     await clearCachedPlaylistItems(db);
     await cachePlaylists(db, playlists);
     await cachePlaylistItems(db, uriToPlaylistItems);
-    localStorage.setItem('spicetify-playlist-labels:liked-tracks-count', likedTracksCount);
+    localStorage.setItem('spicetify-playlist-labels:liked-tracks-count', `${likedTracksCount}`);
 
     return trackUriToPlaylistData;
 }

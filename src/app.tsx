@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import './app.css'
 import { removeTrackFromPlaylist } from "./api";
-import { getTrackUriToPlaylistData } from "./playlist";
+import { getTrackUriToPlaylistData, updatePlaylistData, updateLikedTracks } from "./playlist";
 
 let oldMainElement = null;
 let mainElement = null;
@@ -232,8 +232,8 @@ async function main() {
 
     showAllPlaylists = await JSON.parse(localStorage.getItem('spicetify-playlist-labels:show-all') || 'false');
 
-    const getDataAndUpdateTracklist = (updatePlaylistUri = null) => {
-        getTrackUriToPlaylistData(updatePlaylistUri).then((data) => {
+    const getDataAndUpdateTracklist = (promise) => {
+        promise.then((data) => {
             trackUriToPlaylistData = data;
             playlistUpdated = true;
             updateTracklist();
@@ -241,11 +241,11 @@ async function main() {
     }
 
     await Spicetify.Platform.LibraryAPI.getEvents().addListener('update', (event) => {
-        getDataAndUpdateTracklist();
+        getDataAndUpdateTracklist(updateLikedTracks());
     });
 
     await Spicetify.Platform.PlaylistAPI.getEvents().addListener('operation_complete', (event) => {
-        getDataAndUpdateTracklist(event.data.uri)
+        getDataAndUpdateTracklist(updatePlaylistData(event.data.uri))
     });
 
     const handleButtonClick = (buttonElement: Spicetify.Playbar.Button) => {
