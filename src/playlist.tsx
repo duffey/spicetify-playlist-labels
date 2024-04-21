@@ -158,7 +158,7 @@ async function cachePlaylistItems(db: IDBDatabase, uriToPlaylistItems): Promise<
 
 function addPlaylists(trackUriToPlaylistData, playlists: any[], uriToPlaylistItems: any) {
     playlists.forEach((playlist) => {
-        const playlistItems = uriToPlaylistItems[playlist.uri];
+        const playlistItems = uriToPlaylistItems[playlist.uri] ?? [];
         playlistItems.forEach((playlistItem) => {
             const trackUri = playlistItem.uri;
             if (!trackUriToPlaylistData[trackUri])
