@@ -197,7 +197,7 @@ function addLikedTracks(trackUriToPlaylistData, likedTracks) {
 
 export async function updatePlaylistData(uri) {
     const db = await getDb();
-    const cachedPlaylists = await getCachedPlaylists(db);
+    let playlists = await getPlaylistsExtra();
     const cachedPlaylistItems = await getCachedPlaylistItems(db);
 
     const cachedUriToPlaylistItems = [];
@@ -209,12 +209,14 @@ export async function updatePlaylistData(uri) {
     cachedUriToPlaylistItems[uri] = updatedPlaylistItems;
 
     const trackUriToPlaylistData = {};
-    const ratedPlaylists = cachedPlaylists.filter((playlist) => playlist.isRatedPlaylist);
-    const nonRatedPlaylists = cachedPlaylists.filter((playlist) => !playlist.isRatedPlaylist);
+    playlists = playlists.sort((a, b) => new Date(a.addedAt) - new Date(b.addedAt));
+    const ratedPlaylists = playlists.filter((playlist) => playlist.isRatedPlaylist);
+    const nonRatedPlaylists = playlists.filter((playlist) => !playlist.isRatedPlaylist);
     const likedTracks = cachedUriToPlaylistItems['likedTracks'];
 
     const uriToPlaylistItems = {};
     uriToPlaylistItems[uri] = updatedPlaylistItems;
+    await cachePlaylists(db, playlists);
     await cachePlaylistItems(db, uriToPlaylistItems);
 
     addPlaylists(trackUriToPlaylistData, ratedPlaylists, cachedUriToPlaylistItems);
@@ -235,8 +237,9 @@ export async function updateLikedTracks() {
     });
 
     const trackUriToPlaylistData = {};
-    const ratedPlaylists = cachedPlaylists.filter((playlist) => playlist.isRatedPlaylist);
-    const nonRatedPlaylists = cachedPlaylists.filter((playlist) => !playlist.isRatedPlaylist);
+    const playlists = cachedPlaylists.sort((a, b) => new Date(a.addedAt) - new Date(b.addedAt));
+    const ratedPlaylists = playlists.filter((playlist) => playlist.isRatedPlaylist);
+    const nonRatedPlaylists = playlists.filter((playlist) => !playlist.isRatedPlaylist);
 
     let likedTracks = await getLikedTracks();
     likedTracks = likedTracks.items;
@@ -259,7 +262,7 @@ export async function getTrackUriToPlaylistData() {
     const cachedPlaylists = await getCachedPlaylists(db);
     const cachedPlaylistItems = await getCachedPlaylistItems(db);
 
-    const playlists = await getPlaylistsExtra();
+    let playlists = await getPlaylistsExtra();
     const updatedPlaylists = [];
     playlists.forEach((playlist) => {
         const cachedPlaylist = cachedPlaylists.find((cachedPlaylist) => cachedPlaylist.uri === playlist.uri);
@@ -300,6 +303,7 @@ export async function getTrackUriToPlaylistData() {
     }
 
     const trackUriToPlaylistData = {};
+    playlists = playlists.sort((a, b) => new Date(a.addedAt) - new Date(b.addedAt));
     const ratedPlaylists = playlists.filter((playlist) => playlist.isRatedPlaylist);
     const nonRatedPlaylists = playlists.filter((playlist) => !playlist.isRatedPlaylist);
 
