@@ -65,3 +65,14 @@
     [var3] minmax(120px, var(--col4, 2fr))
     [last] calc(120px + var(--spicetify-playlist-labels-container-width) + 12px) !important;
 }
+
+/* Fix Artist Page Popular-Grid */
+.artist-artistOverview-popularTracks{
+    grid-column:span 4;
+}
+.artist-artistOverview-sideBlock{
+    width: 100%;
+}
+.artist-artistOverview-artistSides{
+    grid-column:span 2;
+}
