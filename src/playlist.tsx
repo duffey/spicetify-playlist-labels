@@ -1,4 +1,4 @@
-import { getContents, getLikedTracks, getLikedTracksCount, getPlaylists, getPlaylistItems } from "./api";
+import { getContents, getLikedTracks, getLikedTracksCount, getPlaylistItems } from "./api";
 
 function getPlaylistsFromContents(contents) {
     let playlists = [];
@@ -20,25 +20,14 @@ function getPlaylistsFromContents(contents) {
     return [playlists, ratedPlaylists];
 }
 
-function getUriToSnapshotId(playlists) {
-    return playlists.reduce((acc, playlist) => {
-        acc[playlist.uri] = playlist.snapshot_id;
-        return acc;
-    }, {});
-}
-
 async function getPlaylistsExtra() {
     const contents = await getContents();
 
     const [playlists, ratedPlaylists] = getPlaylistsFromContents(contents);
 
-    const playlistsWithSnapshotId = await getPlaylists();
-    const uriToSnapshotId = getUriToSnapshotId(playlistsWithSnapshotId);
-
     let allPlaylists = [...playlists, ...ratedPlaylists];
     allPlaylists = allPlaylists.map((playlist) => ({
         ...playlist,
-        snapshotId: uriToSnapshotId[playlist.uri],
         isRatedPlaylist: ratedPlaylists.some((ratedPlaylist) => ratedPlaylist.uri === playlist.uri)
     }));
 
@@ -266,7 +255,7 @@ export async function getTrackUriToPlaylistData() {
     const updatedPlaylists = [];
     playlists.forEach((playlist) => {
         const cachedPlaylist = cachedPlaylists.find((cachedPlaylist) => cachedPlaylist.uri === playlist.uri);
-        if (!cachedPlaylist || cachedPlaylist.snapshotId !== playlist.snapshotId) {
+        if (!cachedPlaylist || cachedPlaylist.totalLength !== playlist.totalLength) {
             updatedPlaylists.push(playlist);
         }
     });
