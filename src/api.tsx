@@ -1,5 +1,5 @@
 export async function getContents() {
-    return await Spicetify.Platform.RootlistAPI.getContents();
+    return await Spicetify.Platform.RootlistAPI.getContents({ decorateImagesAndOwner: true });
 }
 
 export async function getLikedTracksCount() {
